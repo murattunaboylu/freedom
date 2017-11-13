@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System.IO;
 
 namespace Freedom.MarketDataCollection
 {
@@ -44,9 +45,9 @@ namespace Freedom.MarketDataCollection
                 if (response.IsSuccessStatusCode)
                 {
                     var tradesJson = await response.Content.ReadAsStringAsync();
-                    trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson);
+                    Trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson);
 
-                    Latest = trades.First();
+                    Latest = Trades.First();
                 }
             }
             else
@@ -55,17 +56,25 @@ namespace Freedom.MarketDataCollection
                 if (response.IsSuccessStatusCode)
                 {
                     var tradesJson = await response.Content.ReadAsStringAsync();
-                    trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson, new JavaScriptDateTimeConverter());
+                    var trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson, new JavaScriptDateTimeConverter());
 
-                    Latest = trades.First();
+                    foreach (var trade in trades)
+                    {
+                        if (Trades.First().Id != trade.Id)
+                        {
+                            Trades.Add(trade);
+                        }
+                    }
+
+                    Latest = Trades.First();
                 }
             }
         
-            return trades;
+            return Trades;
         }
 
         public static Trade Latest = null;
-        public static List<Trade> trades = null;
+        public static List<Trade> Trades = null;
 
 
         static async Task RunAsync()
@@ -76,24 +85,34 @@ namespace Freedom.MarketDataCollection
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            try
+            using (FileStream tradesFile = File.OpenWrite("Data/trades.csv"))
             {
-                while (true)
+                using (StreamWriter writer = new StreamWriter(tradesFile))
                 {
-                    var trades = await GetTradeAsync("trade_history/BTC/EUR/");
-                    Console.WriteLine(trades.Count);
-                    Console.WriteLine(Latest.Id);
-                    Console.WriteLine(Latest.Amount);
-                    Console.WriteLine(Latest.Price);
-                    Console.WriteLine(Latest.Date);
-                    System.Threading.Thread.Sleep(1000);
+                    try
+                    {
+                        while (true)
+                        {
+                            var trades = await GetTradeAsync("trade_history/BTC/EUR/");
+                            Console.WriteLine(trades.Count);
+                            Console.WriteLine(Latest);
+
+                            //Save the trades to a file
+                            foreach (var trade in trades)
+                            {
+                                writer.WriteLine(trade);
+                            }
+
+                            System.Threading.Thread.Sleep(1000);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-
+            
             Console.ReadLine();
         }
     }

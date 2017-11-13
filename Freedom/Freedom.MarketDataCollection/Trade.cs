@@ -16,14 +16,21 @@ namespace Freedom.MarketDataCollection
         public string Type { get; set; }
 
         [DataMember(Name = "date")]
-        public long Ticks { get; set; }
+        public long Seconds { get; set; }
 
-        public DateTime Date => new DateTime(Ticks);
+        public DateTime Date => new DateTime(1970,1,1).AddSeconds(Seconds);
 
         [DataMember(Name = "amount")]
         public decimal Amount { get; set; }
 
         [DataMember(Name = "price")]
         public decimal Price { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Date:HH:mm:ss} {Type} BTC/EUR {Amount} @ {Price} id:{Id}";
+        }
+
+
     }
 }
