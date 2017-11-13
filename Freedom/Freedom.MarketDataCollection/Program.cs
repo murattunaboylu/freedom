@@ -39,42 +39,38 @@ namespace Freedom.MarketDataCollection
 
         static async Task<List<Trade>> GetTradeAsync(string path)
         {
-            if (Latest == null)
+            List<Trade> trades = new List<Trade>();
+
+            if (!Trades.Any())
             {
                 HttpResponseMessage response = await client.GetAsync(path);
                 if (response.IsSuccessStatusCode)
                 {
                     var tradesJson = await response.Content.ReadAsStringAsync();
-                    Trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson);
+                    trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson);
 
-                    Latest = Trades.First();
+                    trades.Reverse();
                 }
             }
             else
             {
-                HttpResponseMessage response = await client.GetAsync(path + "?since=" + Latest.Id);
+                HttpResponseMessage response = await client.GetAsync(path + "?since=" + Trades.Last().Id + 1);
                 if (response.IsSuccessStatusCode)
                 {
                     var tradesJson = await response.Content.ReadAsStringAsync();
-                    var trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson, new JavaScriptDateTimeConverter());
+                    trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson, new JavaScriptDateTimeConverter());
 
-                    foreach (var trade in trades)
+                    if (trades.Any())
                     {
-                        if (Trades.First().Id != trade.Id)
-                        {
-                            Trades.Add(trade);
-                        }
+                        trades.Reverse();
                     }
-
-                    Latest = Trades.First();
                 }
             }
         
-            return Trades;
+            return trades;
         }
 
-        public static Trade Latest = null;
-        public static List<Trade> Trades = null;
+        private static readonly List<Trade> Trades = new List<Trade>();
 
 
         static async Task RunAsync()
@@ -85,7 +81,10 @@ namespace Freedom.MarketDataCollection
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            using (FileStream tradesFile = File.OpenWrite("Data/trades.csv"))
+            if (!Directory.Exists("Data"))
+                Directory.CreateDirectory("Data");
+            
+            using (FileStream tradesFile = File.OpenWrite("Data\\trades.csv"))
             {
                 using (StreamWriter writer = new StreamWriter(tradesFile))
                 {
@@ -94,13 +93,21 @@ namespace Freedom.MarketDataCollection
                         while (true)
                         {
                             var trades = await GetTradeAsync("trade_history/BTC/EUR/");
-                            Console.WriteLine(trades.Count);
-                            Console.WriteLine(Latest);
 
-                            //Save the trades to a file
-                            foreach (var trade in trades)
+
+                            if (trades.Any())
                             {
-                                writer.WriteLine(trade);
+                                Console.WriteLine(trades.Count + " new trades");
+
+                                Trades.AddRange(trades);
+
+                                //Save the trades to a file
+                                foreach (var trade in trades)
+                                {
+                                    Console.WriteLine(trade);
+                                    var tradeJson = JsonConvert.SerializeObject(trade);
+                                    writer.WriteLine(tradeJson);
+                                }
                             }
 
                             System.Threading.Thread.Sleep(1000);

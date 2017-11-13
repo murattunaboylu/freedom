@@ -30,7 +30,5 @@ namespace Freedom.MarketDataCollection
         {
             return $"{Date:HH:mm:ss} {Type} BTC/EUR {Amount} @ {Price} id:{Id}";
         }
-
-
     }
 }
