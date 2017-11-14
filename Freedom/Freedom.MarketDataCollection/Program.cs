@@ -55,7 +55,10 @@ namespace Freedom.MarketDataCollection
             }
             else
             {
-                HttpResponseMessage response = await client.GetAsync(path + "?since=" + Trades.Last().Id + 1);
+                var url = path + "?since=" + (Trades.Last().Id + 1);
+                Console.WriteLine(url);
+
+                HttpResponseMessage response = await client.GetAsync(url);
                 if (response.IsSuccessStatusCode)
                 {
                     var tradesJson = await response.Content.ReadAsStringAsync();
