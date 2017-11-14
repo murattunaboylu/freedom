@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.IO;
+using System.Data.SqlClient;
 
 namespace Freedom.MarketDataCollection
 {
@@ -16,7 +17,7 @@ namespace Freedom.MarketDataCollection
         static void Main(string[] args)
         {
             Console.WriteLine("Enter to start reading market data from CEX.IO");
-            Console.ReadLine();
+            //Console.ReadLine();
             RunAsync().Wait();
 
             //https://cex.io/api/ohlcv/hd/20160228/BTC/USD
@@ -66,7 +67,7 @@ namespace Freedom.MarketDataCollection
                     }
                 }
             }
-        
+
             return trades;
         }
 
@@ -83,34 +84,78 @@ namespace Freedom.MarketDataCollection
 
             if (!Directory.Exists("Data"))
                 Directory.CreateDirectory("Data");
-            
+
+            //Write the trades into a database
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+            builder.DataSource = "ff-marketdata.database.windows.net";
+            builder.UserID = "marketdata";
+            builder.Password = "mar20X/b";
+            builder.InitialCatalog = "marketdata";
+
+
             using (FileStream tradesFile = File.OpenWrite("Data\\trades.csv"))
             {
                 using (StreamWriter writer = new StreamWriter(tradesFile))
                 {
                     try
                     {
-                        while (true)
+                        using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                         {
-                            var trades = await GetTradeAsync("trade_history/BTC/EUR/");
-
-
-                            if (trades.Any())
+                            connection.Open();
+                            using (SqlCommand command = new SqlCommand("", connection))
                             {
-                                Console.WriteLine(trades.Count + " new trades");
+                                command.CommandType = System.Data.CommandType.Text;
+                                command.CommandText = "INSERT INTO dbo.Trades (Exchange, Market, TradeId, Price, Quantity, Total, [Time], [Type]) " +
+                                    "VALUES(@Exchange, @Market, @TradeId, @Price, @Quantity, @Total, @Time, @Type)";
 
-                                Trades.AddRange(trades);
+                                command.Parameters.Add(new SqlParameter("Exchange", ""));
+                                command.Parameters.Add(new SqlParameter("Market", ""));
+                                command.Parameters.Add(new SqlParameter("TradeId", ""));
+                                command.Parameters.Add(new SqlParameter("Price", System.Data.SqlDbType.Money));
+                                command.Parameters.Add(new SqlParameter("Quantity", System.Data.SqlDbType.Decimal));
+                                command.Parameters.Add(new SqlParameter("Total", System.Data.SqlDbType.Decimal));
+                                command.Parameters.Add(new SqlParameter("Time", System.Data.SqlDbType.DateTime));
+                                command.Parameters.Add(new SqlParameter("Type", ""));
 
-                                //Save the trades to a file
-                                foreach (var trade in trades)
+                                command.Parameters["Quantity"].Precision = 18;
+                                command.Parameters["Quantity"].Scale = 8;
+
+                                command.Parameters["Total"].Precision = 18;
+                                command.Parameters["Total"].Scale = 8;
+
+                                while (true)
                                 {
-                                    Console.WriteLine(trade);
-                                    var tradeJson = JsonConvert.SerializeObject(trade);
-                                    writer.WriteLine(tradeJson);
+                                    var trades = await GetTradeAsync("trade_history/BTC/EUR/");
+
+                                    if (trades.Any())
+                                    {
+                                        Console.WriteLine(trades.Count + " new trades");
+
+                                        Trades.AddRange(trades);
+
+                                        //Save the trades to a file
+                                        foreach (var trade in trades)
+                                        {
+                                            Console.WriteLine(trade);
+                                            var tradeJson = JsonConvert.SerializeObject(trade);
+                                            writer.WriteLine(tradeJson);
+
+                                            command.Parameters["Exchange"].Value = "CEX.IO";
+                                            command.Parameters["Market"].Value = "BTC/EUR";
+                                            command.Parameters["TradeId"].Value = trade.Id;
+                                            command.Parameters["Price"].Value = trade.Price;
+                                            command.Parameters["Quantity"].Value = trade.Amount;
+                                            command.Parameters["Total"].Value = trade.Price * trade.Amount;
+                                            command.Parameters["Time"].Value = trade.Date;
+                                            command.Parameters["Type"].Value = trade.Type;
+
+                                            command.ExecuteNonQuery();
+                                        }
+                                    }
+
+                                    System.Threading.Thread.Sleep(120*1000);
                                 }
                             }
-
-                            System.Threading.Thread.Sleep(1000);
                         }
                     }
                     catch (Exception e)
@@ -119,7 +164,7 @@ namespace Freedom.MarketDataCollection
                     }
                 }
             }
-            
+
             Console.ReadLine();
         }
     }
