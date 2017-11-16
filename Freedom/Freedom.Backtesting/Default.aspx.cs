@@ -75,9 +75,11 @@ namespace Freedom.Backtesting
             {
                 var startDate = trades.First().Date;
 
-                for (DateTime i = startDate; i < startDate.AddDays(1); i = i.AddMinutes(5))
+                var intervalInMinutes = 20;
+
+                for (DateTime i = startDate; i < startDate.AddDays(1); i = i.AddMinutes(intervalInMinutes))
                 {
-                    var tradesInSameWindow = trades.Where(t => t.Date >= i && t.Date < i.AddMinutes(5));
+                    var tradesInSameWindow = trades.Where(t => t.Date >= i && t.Date < i.AddMinutes(intervalInMinutes));
 
                     if (tradesInSameWindow.Any())
                     {
