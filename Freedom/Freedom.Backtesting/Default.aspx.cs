@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
@@ -13,6 +14,19 @@ namespace Freedom.Backtesting
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            if (!Page.IsPostBack)
+            {
+                StartDateTextBox.Text = DateTime.Now.AddDays(-7).ToString("yyyyMMdd");
+                EndDateTextBox.Text = DateTime.Now.ToString("yyyyMMdd");
+            }
+        }
+
+        public void Simulate(DateTime start, DateTime end, int interval)
+        {
+            //Clear           
+            OrdersListBox.Items.Clear();
+            PnLLabel.Text = "0";
+
             //https://msdn.microsoft.com/en-us/library/hh297114%28v=vs.100%29.aspx?f=255&MSPPError=-2147217396
             var chart = new Chart();
             chart.ImageLocation = "~/TempImages/ChartPic_#SEQ(300,3)";
@@ -39,7 +53,7 @@ namespace Freedom.Backtesting
                     {
                         command.CommandType = System.Data.CommandType.Text;
                         command.CommandText = "SELECT t.Id, t.Time, t.Price FROM dbo.Trades t WHERE t.[time] > @date ORDER BY t.Id ASC";
-                        command.Parameters.Add(new SqlParameter("date", DateTime.Now.AddDays(-5)));
+                        command.Parameters.Add(new SqlParameter("date", start));
 
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
@@ -77,13 +91,11 @@ namespace Freedom.Backtesting
             //Calculate low, high, open, close
             if (trades.Any())
             {
-                var startDate = trades.First().Date;
+                start = trades.First().Date > start ? trades.First().Date : start;
 
-                var intervalInMinutes = 5;
-
-                for (DateTime i = startDate; i < startDate.AddDays(4); i = i.AddMinutes(intervalInMinutes))
+                for (DateTime i = start; i < end; i = i.AddMinutes(interval))
                 {
-                    var tradesInSameWindow = trades.Where(t => t.Date >= i && t.Date < i.AddMinutes(intervalInMinutes));
+                    var tradesInSameWindow = trades.Where(t => t.Date >= i && t.Date < i.AddMinutes(interval));
 
                     if (tradesInSameWindow.Any())
                     {
@@ -213,6 +225,15 @@ namespace Freedom.Backtesting
         }
 
         public List<Order> Orders { get; set; }
+
+        protected void SimulateButton_Click(object sender, EventArgs e)
+        {
+            var startDate = DateTime.ParseExact(StartDateTextBox.Text, "yyyyMMdd", CultureInfo.InvariantCulture);
+            var endDate = DateTime.ParseExact(EndDateTextBox.Text, "yyyyMMdd", CultureInfo.InvariantCulture);
+            var interval = int.Parse(IntervalDropDownList.SelectedValue);
+
+            Simulate(startDate, endDate, interval);
+        }
     }
 
     public class Order

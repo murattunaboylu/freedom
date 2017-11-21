@@ -3,32 +3,54 @@
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
 
     <div class="jumbotron">
-        <h1>Backtesting</h1>
+        <h2>Backtesting</h2>
         <p class="lead">BTC/EUR CEX.IO</p>
-        <p><asp:PlaceHolder runat="server" ID="ChartPlaceHolder"></asp:PlaceHolder></p>
-     </div>
+        <p class="lead">
+            <div>
+                <div style="display: inline-block; position: relative">
+                    From
+                    <asp:TextBox ID="StartDateTextBox" runat="server"></asp:TextBox>
+                </div>
+                <div style="display: inline-block; position: relative; margin-left: 10px">
+                    To
+                    <asp:TextBox ID="EndDateTextBox" runat="server"></asp:TextBox>
+                </div>
+                <div style="display: inline-block; position: relative; margin-left: 10px">
+                    <asp:DropDownList ID="IntervalDropDownList" runat="server">
+                        <asp:ListItem>5</asp:ListItem>
+                        <asp:ListItem>10</asp:ListItem>
+                        <asp:ListItem>30</asp:ListItem>
+                        <asp:ListItem>60</asp:ListItem>
+                        <asp:ListItem>120</asp:ListItem>
+                        <asp:ListItem>240</asp:ListItem>
+                        <asp:ListItem>480</asp:ListItem>
+                        <asp:ListItem>1440</asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+                 <div style="display: inline-block; position: relative; margin-left: 10px">
+                    <asp:Button ID="SimulateButton" runat="server" OnClick="SimulateButton_Click" Text="Sim" />
+                </div>
+            </div>
+        </p>
+        <p>
+            <asp:PlaceHolder runat="server" ID="ChartPlaceHolder"></asp:PlaceHolder>
+        </p>
+    </div>
 
     <div class="row">
         <div class="col-md-4">
-            <h2>Orders</h2>
+            <h3>Orders</h3>
             <p>
                 <asp:ListBox ID="OrdersListBox" runat="server"></asp:ListBox>
             </p>
         </div>
         <div class="col-md-4">
-            <h2>PnL</h2>
+            <h3>PnL</h3>
             <p>
                 <asp:Label ID="PnLLabel" runat="server" Text="Label"></asp:Label>
             </p>
         </div>
         <div class="col-md-4">
-            <h2>Web Hosting</h2>
-            <p>
-                You can easily find a web hosting company that offers the right mix of features and price for your applications.
-            </p>
-            <p>
-                <a class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301950">Learn more &raquo;</a>
-            </p>
         </div>
     </div>
 
