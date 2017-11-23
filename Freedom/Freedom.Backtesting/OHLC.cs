@@ -24,5 +24,8 @@ namespace Freedom.Backtesting
         public decimal High { get; set; }
         public decimal Low { get; set; }
         public decimal Close { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public double Volume { get; set; }
     }
 }
