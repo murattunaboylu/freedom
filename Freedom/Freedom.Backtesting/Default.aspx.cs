@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Web;
 using System.Web.UI;
 using System.Web.UI.DataVisualization.Charting;
 using System.Web.UI.WebControls;
@@ -118,12 +118,19 @@ namespace Freedom.Backtesting
                 }
             }
 
-            PnLLabel.Text = CalculatePnL().ToString();
-            PnLLabel.Text += Environment.NewLine;
-            PnLLabel.Text += $"# of orders: {Orders.Count}";
-            PnLLabel.Text += Environment.NewLine;
-            PnLLabel.Text += $"Max sell:" + Orders.Select(o=>o.Price).Max();
-            //TODO: win ratio, max win, max loss, mean win, mean loss
+            //Stats after simulation
+            var stats = new Stats(Orders);
+
+            PnLLabel.Text = $"Actual ({stats.Pnl.ToString()}) vs Market ({DataPoints.First().Close - DataPoints.Last().Open}) vs Target ({(end-start).TotalDays * 80})";
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Win ratio : {stats.WinRatio:N0}% <br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"# t-pairs : {stats.TradePairCount}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Max win   : {stats.MaxWin}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Max loss  : {stats.MaxLoss}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Mean win  : {stats.MeanWin:N2}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Mean loss : {stats.MeanLoss:N2}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Max hold  : {stats.MaxHoldInHours}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Mean hold : {stats.MeanHoldInHours:N2}<br/>" });
+            StatsPlaceHolder.Controls.Add(new Label() { Text = $"Min hold  : {stats.MinHoldInHours}<br/>" });
 
             ChartPlaceHolder.Controls.Add(chart);
         }
@@ -230,30 +237,12 @@ namespace Freedom.Backtesting
                 }
             }
 
-            PnLLabel.Text = CalculatePnL().ToString();
-
+            //Stats
 
             ChartPlaceHolder.Controls.Add(chart);
         }
 
-        private decimal CalculatePnL()
-        {
-            decimal pnl = 0;
-
-            if (Orders.Any())
-            {
-                if (Orders.Last().Type == "Buy")
-                    Orders.Remove(Orders.Last());
-
-                foreach (var order in Orders)
-                {
-                    pnl = order.Type == "Buy" ? pnl - order.Price : pnl + order.Price;
-                }
-            }
-
-            return pnl;
-        }
-
+        
         public List<OHLC> DataPoints = new List<OHLC>();
 
         private decimal CalculateMovingAverage(int dataPointCount)
@@ -326,6 +315,7 @@ namespace Freedom.Backtesting
                 {
                     CreateOrder(ohlc, date, "Sell");
                     State = TradingState.Initial;
+                    return;//Otherwise might sell twice
                 }
 
                 //Limit profit
@@ -423,6 +413,11 @@ namespace Freedom.Backtesting
 
             Simulate(startDate, endDate, interval);
         }
+
+        protected void OrdersListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 
     public class Order
@@ -440,5 +435,96 @@ namespace Freedom.Backtesting
         WaitingToBuy,
         MonitoringDownTrend,
 
+    }
+
+    public class Stats
+    {
+        public decimal Pnl { get; set; }
+        public double WinRatio { get; set; }
+        public int TradePairCount { get; set; }
+        public decimal MaxWin { get; set; }
+        public decimal MaxLoss { get; set; }
+        public decimal MeanWin { get; set; }
+        public decimal MeanLoss { get; set; }
+        public double MaxHoldInHours { get; set; }
+        public double MeanHoldInHours { get; set; }
+        public double MinHoldInHours { get; set; }
+
+        public Stats(List<Order> orders)
+        {
+            if (orders.Any())
+            {
+                if (orders.First().Type != "Buy")
+                    throw new StrategyException($"Strategy first order is {orders.First().Type} but should be Buy");
+
+                //Clean up so we have only Buy-Sell pairs
+                if (orders.Last().Type == "Buy")
+                    orders.Remove(orders.Last());
+
+                //Sense-check
+                if(orders.Count % 2 != 0)
+                    throw new StrategyException($"Strategy have odd trades. Failed pairing. {orders.Count}");
+
+                if(orders.Count(o=>o.Type == "Buy") != orders.Count(o => o.Type == "Sell"))
+                    throw new StrategyException($"Unbalanced trades. Failed pairing. Buys {orders.Count(o => o.Type == "Buy")} vs Sells {orders.Count(o => o.Type == "Sell")}");
+
+                var tradePairs = new List<TradePair>();
+
+                //Pair buy and sell
+                foreach (var order in orders)
+                {
+                    Debug.WriteLine((order.Type == "Buy" ? "-" : "+") + order.Price);
+
+                    if (order.Type == "Buy")
+                    {
+                        //TODO: Catch consecutive Buy orders
+
+                        tradePairs.Add(new TradePair() { BuyOrder = order });
+                    }
+                    else
+                    {
+                        //Double sell
+                        if(tradePairs.Last().SellOrder !=null)
+                            throw new StrategyException($"Consecutive sell orders last {tradePairs.Last().SellOrder} and current {order.Price}");
+
+                        tradePairs.Last().SellOrder = order;
+                    }
+                        
+                }
+
+                Pnl = tradePairs.Select(p => p.SellOrder.Price - p.BuyOrder.Price).Sum();
+                
+                var wins = tradePairs.Where(p => p.SellOrder.Price > p.BuyOrder.Price);
+                var losses = tradePairs.Where(p => p.SellOrder.Price <= p.BuyOrder.Price);
+                WinRatio = wins.Count()/(double)tradePairs.Count()*100;
+
+                TradePairCount = tradePairs.Count();
+
+                //Checking for anomalies
+                MaxWin = wins.Max(p => p.SellOrder.Price - p.BuyOrder.Price);
+                MaxLoss = losses.Min(p => p.SellOrder.Price - p.BuyOrder.Price);
+                MeanWin = wins.Average(p => p.SellOrder.Price - p.BuyOrder.Price);
+                MeanLoss = losses.Average(p => p.SellOrder.Price - p.BuyOrder.Price);
+
+                //Risk metrics - max hold
+                MaxHoldInHours = tradePairs.Max(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+                MeanHoldInHours = tradePairs.Average(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+                MinHoldInHours = tradePairs.Min(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+            }
+        }
+
+        private class TradePair
+        {
+            public Order BuyOrder { get; set; }
+            public Order SellOrder { get; set; }
+        }
+
+        private class StrategyException : ApplicationException
+        {
+            public StrategyException(string message) : base(message)
+            {
+
+            }
+        }
     }
 }

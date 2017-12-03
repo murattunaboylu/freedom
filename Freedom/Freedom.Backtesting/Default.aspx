@@ -41,13 +41,16 @@
         <div class="col-md-4">
             <h3>Orders</h3>
             <p>
-                <asp:ListBox ID="OrdersListBox" runat="server"></asp:ListBox>
+                <asp:ListBox ID="OrdersListBox" runat="server" OnSelectedIndexChanged="OrdersListBox_SelectedIndexChanged" SelectionMode="Multiple"></asp:ListBox>
             </p>
         </div>
         <div class="col-md-4">
             <h3>PnL</h3>
             <p>
                 <asp:Label ID="PnLLabel" runat="server" Text="Label"></asp:Label>
+            </p>
+            <p>
+                <asp:PlaceHolder ID="StatsPlaceHolder" runat="server"></asp:PlaceHolder>
             </p>
         </div>
         <div class="col-md-4">
