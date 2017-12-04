@@ -44,6 +44,9 @@ namespace Freedom.Backtesting
 
             List<OHLC> ohlcList = new List<OHLC>();
 
+            //Parse strategy parameters
+            var strategyParameters = StrategyParametersTextBox.Text.Split(',');
+            
             try
             {
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
@@ -109,7 +112,7 @@ namespace Freedom.Backtesting
                         var ohlc = new OHLC(open, high, low, close);
 
                         //Check for indicators and make trading decisions
-                        RelativeStrengthIndexStrategy(ohlc, ohlcInTheSameWindow.Last().Start);
+                        RelativeStrengthIndexStrategy(ohlc, ohlcInTheSameWindow.Last().Start, strategyParameters);
 
                         DataPoints.Insert(0, ohlc);
 
@@ -279,29 +282,34 @@ namespace Freedom.Backtesting
             var meanDown = sumDown / (n-1);
 
             //RSI = meanUp/(meanUp+meanDown)
-            var rsi = meanUp / (meanUp + meanDown) * 100;
+            //Preventing divide by 0 - by checking meanUp and Down equality
+            var rsi = meanUp == meanDown ? 0.5m : meanUp / (meanUp + meanDown) * 100;
 
             return (double)rsi;
         }
 
         public TradingState State { get; set; }
 
-        private void RelativeStrengthIndexStrategy(OHLC ohlc, DateTime date)
+        private void RelativeStrengthIndexStrategy(OHLC ohlc, DateTime date, string[] parameters)
         {
             if (DataPoints.Count < 200)
                 return;
 
+            var rsiPeriod = int.Parse(parameters[0]);
+            var rsiThreshold = int.Parse(parameters[1]);
+            var stopLossRatio = double.Parse(parameters[2]);
+
             //Calculate indicators
             var direction = CalculateMovingAverage(200);
             var sellSignal = CalculateMovingAverage(5);
-            var rsi = CalculateRelativeStrengthIndex(3);
+            var rsi = CalculateRelativeStrengthIndex(rsiPeriod);
 
             //Long Entry
             //When the price candle closes or is already above 200 day MA and RSI closes below 5 buy
             //Sell when closes above 5-period moving average
             if (State == TradingState.Initial)
             {
-                if (ohlc.High > direction && rsi < 5)
+                if (ohlc.High > direction && rsi < rsiThreshold)
                 {
                     CreateOrder(ohlc, date, "Buy");
                     State = TradingState.MonitoringDownTrend;
@@ -311,7 +319,7 @@ namespace Freedom.Backtesting
             {
                 //Stop loss when BUY order loses more than 2% of its value
                 var buyOrder = Orders.Last();
-                if ((double)((buyOrder.Price - ohlc.Close) / buyOrder.Price) > 0.02)
+                if ((double)((buyOrder.Price - ohlc.Close) / buyOrder.Price) > stopLossRatio)
                 {
                     CreateOrder(ohlc, date, "Sell");
                     State = TradingState.Initial;
@@ -501,15 +509,25 @@ namespace Freedom.Backtesting
                 TradePairCount = tradePairs.Count();
 
                 //Checking for anomalies
-                MaxWin = wins.Max(p => p.SellOrder.Price - p.BuyOrder.Price);
-                MaxLoss = losses.Min(p => p.SellOrder.Price - p.BuyOrder.Price);
-                MeanWin = wins.Average(p => p.SellOrder.Price - p.BuyOrder.Price);
-                MeanLoss = losses.Average(p => p.SellOrder.Price - p.BuyOrder.Price);
+                if (wins.Any())
+                {
+                    MaxWin = wins.Max(p => p.SellOrder.Price - p.BuyOrder.Price);
+                    MeanWin = wins.Average(p => p.SellOrder.Price - p.BuyOrder.Price);
+                }
 
-                //Risk metrics - max hold
-                MaxHoldInHours = tradePairs.Max(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
-                MeanHoldInHours = tradePairs.Average(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
-                MinHoldInHours = tradePairs.Min(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+                if (losses.Any())
+                {
+                    MaxLoss = losses.Min(p => p.SellOrder.Price - p.BuyOrder.Price);
+                    MeanLoss = losses.Average(p => p.SellOrder.Price - p.BuyOrder.Price);
+                }
+
+                if (TradePairCount > 0)
+                {
+                    //Risk metrics - max hold
+                    MaxHoldInHours = tradePairs.Max(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+                    MeanHoldInHours = tradePairs.Average(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+                    MinHoldInHours = tradePairs.Min(p => (p.SellOrder.Date - p.BuyOrder.Date).TotalHours);
+                }
             }
         }
 

@@ -30,6 +30,10 @@
                  <div style="display: inline-block; position: relative; margin-left: 10px">
                     <asp:Button ID="SimulateButton" runat="server" OnClick="SimulateButton_Click" Text="Sim" />
                 </div>
+                <div style="display: inline-block; position: relative; margin-left: 10px">
+                    <asp:TextBox ID="StrategyParametersTextBox" runat="server"></asp:TextBox>
+                </div>
+                    
             </div>
         </p>
         <p>
