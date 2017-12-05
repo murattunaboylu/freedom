@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.Backtesting", "Free
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.MarketDataImport", "Freedom.MarketDataImport\Freedom.MarketDataImport.csproj", "{74A16777-34DD-478E-A4C0-F081019E37B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.SimulatorServices", "Freedom.SimulatorServices\Freedom.SimulatorServices.csproj", "{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{74A16777-34DD-478E-A4C0-F081019E37B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74A16777-34DD-478E-A4C0-F081019E37B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74A16777-34DD-478E-A4C0-F081019E37B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

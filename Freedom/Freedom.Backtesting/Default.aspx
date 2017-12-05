@@ -2,44 +2,44 @@
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
 
-    <div class="jumbotron">
-        <h2>Backtesting</h2>
-        <p class="lead">BTC/EUR CEX.IO</p>
-        <p class="lead">
-            <div>
-                <div style="display: inline-block; position: relative">
-                    From
+    <p class="lead">BTC/EUR CEX.IO</p>
+    <p class="lead">
+        <div>
+            <div style="display: inline-block; position: relative">
+                From
                     <asp:TextBox ID="StartDateTextBox" runat="server"></asp:TextBox>
-                </div>
-                <div style="display: inline-block; position: relative; margin-left: 10px">
-                    To
-                    <asp:TextBox ID="EndDateTextBox" runat="server"></asp:TextBox>
-                </div>
-                <div style="display: inline-block; position: relative; margin-left: 10px">
-                    <asp:DropDownList ID="IntervalDropDownList" runat="server">
-                        <asp:ListItem>5</asp:ListItem>
-                        <asp:ListItem>10</asp:ListItem>
-                        <asp:ListItem>30</asp:ListItem>
-                        <asp:ListItem>60</asp:ListItem>
-                        <asp:ListItem>120</asp:ListItem>
-                        <asp:ListItem>240</asp:ListItem>
-                        <asp:ListItem>480</asp:ListItem>
-                        <asp:ListItem>1440</asp:ListItem>
-                    </asp:DropDownList>
-                </div>
-                 <div style="display: inline-block; position: relative; margin-left: 10px">
-                    <asp:Button ID="SimulateButton" runat="server" OnClick="SimulateButton_Click" Text="Sim" />
-                </div>
-                <div style="display: inline-block; position: relative; margin-left: 10px">
-                    <asp:TextBox ID="StrategyParametersTextBox" runat="server"></asp:TextBox>
-                </div>
-                    
             </div>
-        </p>
-        <p>
-            <asp:PlaceHolder runat="server" ID="ChartPlaceHolder"></asp:PlaceHolder>
-        </p>
-    </div>
+            <div style="display: inline-block; position: relative; margin-left: 10px">
+                To
+                    <asp:TextBox ID="EndDateTextBox" runat="server"></asp:TextBox>
+            </div>
+            <div style="display: inline-block; position: relative; margin-left: 10px">
+                <asp:DropDownList ID="IntervalDropDownList" runat="server">
+                    <asp:ListItem>5</asp:ListItem>
+                    <asp:ListItem>10</asp:ListItem>
+                    <asp:ListItem>30</asp:ListItem>
+                    <asp:ListItem>60</asp:ListItem>
+                    <asp:ListItem>120</asp:ListItem>
+                    <asp:ListItem>240</asp:ListItem>
+                    <asp:ListItem>480</asp:ListItem>
+                    <asp:ListItem>1440</asp:ListItem>
+                </asp:DropDownList>
+            </div>
+            <div style="display: inline-block; position: relative; margin-left: 10px">
+                <asp:Button ID="SimulateButton" runat="server" OnClick="SimulateButton_Click" Text="Sim" />
+            </div>
+            <div style="display: inline-block; position: relative; margin-left: 10px">
+                <asp:TextBox ID="StrategyParametersTextBox" runat="server"></asp:TextBox>
+            </div>
+
+        </div>
+    </p>
+
+    <div id="chartdiv" style="width: 100%; height: 600px;"></div>
+    <p>
+        <asp:PlaceHolder runat="server" ID="ChartPlaceHolder"></asp:PlaceHolder>
+    </p>
+
 
     <div class="row">
         <div class="col-md-4">
