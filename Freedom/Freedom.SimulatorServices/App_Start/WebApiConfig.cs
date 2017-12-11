@@ -19,7 +19,6 @@ namespace Freedom.SimulatorServices
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute("default", "{controller}/{start}/{end}/{interval}");
-
         }
     }
 }

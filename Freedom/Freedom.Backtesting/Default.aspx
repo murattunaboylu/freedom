@@ -1,8 +1,8 @@
-﻿<%@ Page Title="Home Page" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Freedom.Backtesting._Default" %>
+﻿<%@ Page Title="Backtesting" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Freedom.Backtesting._Default" %>
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
 
-    <p class="lead">BTC/EUR CEX.IO</p>
+    <p class="lead" style="margin-top:5px">BTC/EUR CEX.IO</p>
     <p class="lead">
         <div>
             <div style="display: inline-block; position: relative">
