@@ -21,13 +21,6 @@ namespace Freedom.SimulatorServices.Controllers
 
             var result = Simulate(startDate, endDate, intervalInMinutes, parameters);
 
-            //var result = new SimulationResult()
-            //{
-            //    Description = $"Running simulation {startDate}-{endDate} for every {intervalInMinutes} minutes with RSI period {parameters.RsiPeriod}",
-            //    Values = new List<decimal>() { 210.35m, 223, 230.35m, 243, 219.35m, 203, 212.35m, 224, 219.35m, 225 },
-            //    Volumes = new List<int>() { 23500, 9500, 13560, 19230, 23500, 9500, 13560, 19230, 1600, 5962 }
-            //};
-
             return result;
         }
 
@@ -299,7 +292,7 @@ namespace Freedom.SimulatorServices.Controllers
 
                 //Limit profit
                 //by selling the asset when it closes over its 5-period moving average
-                if (ohlc.Close > sellSignal)
+                if (ohlc.Close > sellSignal && ohlc.Close > buyOrder.Price)
                 {
                     CreateOrder(ohlc, date, "Sell", "Closes over 5-d MA");
                     State = TradingState.Initial;

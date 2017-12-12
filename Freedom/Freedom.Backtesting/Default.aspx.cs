@@ -7,11 +7,7 @@ namespace Freedom.Backtesting
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!Page.IsPostBack)
-            {
-                StartDateTextBox.Text = DateTime.Now.AddDays(-7).ToString("yyyyMMdd");
-                EndDateTextBox.Text = DateTime.Now.ToString("yyyyMMdd");
-            }
+     
         }
               
 

@@ -6,30 +6,26 @@
     <p class="lead">
         <div>
             <div style="display: inline-block; position: relative">
-                From
-                    <asp:TextBox ID="StartDateTextBox" runat="server"></asp:TextBox>
+                From <input id="Start" type="text" value="20170701">                    
             </div>
             <div style="display: inline-block; position: relative; margin-left: 10px">
-                To
-                    <asp:TextBox ID="EndDateTextBox" runat="server"></asp:TextBox>
+                To <input id="End" type="text" value="20170725">                    
             </div>
             <div style="display: inline-block; position: relative; margin-left: 10px">
-                <asp:DropDownList ID="IntervalDropDownList" runat="server">
-                    <asp:ListItem>5</asp:ListItem>
-                    <asp:ListItem>10</asp:ListItem>
-                    <asp:ListItem>30</asp:ListItem>
-                    <asp:ListItem>60</asp:ListItem>
-                    <asp:ListItem>120</asp:ListItem>
-                    <asp:ListItem>240</asp:ListItem>
-                    <asp:ListItem>480</asp:ListItem>
-                    <asp:ListItem>1440</asp:ListItem>
-                </asp:DropDownList>
+                <select id="Interval">
+                    <option>30</option>
+                    <option>60</option>
+                    <option selected>120</option>
+                    <option>240</option>
+                    <option>480</option>
+                    <option>1440</option>
+                </select>
             </div>
             <div style="display: inline-block; position: relative; margin-left: 10px">
-                <asp:Button ID="SimulateButton" runat="server" Text="Sim" />
+                <input type="button" ID="Simulate" Value="Sim" onclick="simulate();" />
             </div>
             <div style="display: inline-block; position: relative; margin-left: 10px">
-                <asp:TextBox ID="StrategyParametersTextBox" runat="server"></asp:TextBox>
+                <input type="text" ID="StrategyParameters" value="rsiPeriod=2&rsiThreshold=5&stopLossRatio=0.02" style="width:500px;max-width:500px" />
             </div>
 
         </div>

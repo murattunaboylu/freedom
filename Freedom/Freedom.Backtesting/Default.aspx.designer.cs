@@ -13,51 +13,6 @@ namespace Freedom.Backtesting {
     public partial class _Default {
         
         /// <summary>
-        /// StartDateTextBox control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox StartDateTextBox;
-        
-        /// <summary>
-        /// EndDateTextBox control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox EndDateTextBox;
-        
-        /// <summary>
-        /// IntervalDropDownList control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList IntervalDropDownList;
-        
-        /// <summary>
-        /// SimulateButton control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button SimulateButton;
-        
-        /// <summary>
-        /// StrategyParametersTextBox control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox StrategyParametersTextBox;
-        
-        /// <summary>
         /// ChartPlaceHolder control.
         /// </summary>
         /// <remarks>

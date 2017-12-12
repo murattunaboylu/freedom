@@ -22,17 +22,34 @@
 		<script>
 			AmCharts.ready(function () {
 				generateChartData();
-				createStockChart();
 			});
 
 			var chartData = [];
 			var events = [];
 
+			function simulate()
+			{
+			    chartData = [];
+			    events = [];
+
+			    $("#Orders").append("<hr/>");
+		        $("#Stats").append("<hr/>");
+
+			    generateChartData();			   
+			}
+
 			function generateChartData() {
+			    var start = $("#Start")[0].value;
+			    var end = $("#End")[0].value;
+			    var interval = $("#Interval")[0].value;
+			    var params = $("#StrategyParameters")[0].value;
+
+			    var url = "<%=ConfigurationManager.AppSettings["SimulationServicesUrl"] %>/rsi/" + start + "/" + end + "/" + interval + "/?" + params;
+
 			    $.ajax({
-			        url: "http://localhost:2635/rsi/20170701/20170801/120/?rsiPeriod=2&rsiThreshold=5&stopLossRatio=0.2",
+			        url: url,
 			        type: "GET",
-			        async: false,
+			        async: true,
 			        cache: false,
 			        contentType: "application/json",
 			        dataType: "json",
@@ -48,13 +65,16 @@
 
 			            events = result.Events;
 
+			            //Draw the chart
+			            createStockChart();
+
 			            //Display orders
 			            for (var i = 0; i < result.Orders.length; i++) {
 			                $("#Orders").append("#" + i + " " + result.Orders[i].Date + " " + result.Orders[i].Type + " @ " + result.Orders[i].Price + "<br/>");
 			            }
 
 			            //Display stats
-			            $("#PnL").append("Actual (" + result.Stats.Pnl + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")");
+			            $("#Stats").append("Actual (" + result.Stats.Pnl + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")");
 
 			            $("#Stats").append("Win ratio : " + result.Stats.WinRatio + "<br/>");
 			            $("#Stats").append("# t-pairs : " + result.Stats.TradePairCount + "<br/>");
@@ -192,7 +212,7 @@
                         {
                             date: new Date(events[i].date),
                             type: "sign",
-                            backgroundColor: "#85CDE6",
+                            backgroundColor: events[i].description === "Stop Loss" ? "#d65d5d" : "#85CDE6",
                             graph: graph1,
                             text: events[i].text,
                             description: "#" + i + " " + events[i].text + ":" + events[i].description
