@@ -29,51 +29,47 @@
 
 			function generateChartData() {
 			    $.ajax({
-			        url: "http://localhost/simulatorservices/rsi/20170701/20171101/120/",
+			        url: "http://localhost:2635/rsi/20170701/20171101/120/?rsiPeriod=2&rsiThreshold=5&stopLossRatio=0.2",
 			        type: "GET",
 			        async: false,
 			        cache: false,
 			        contentType: "application/json",
 			        dataType: "json",
-			        success: function(result) {
+			        success: function (result) {
 			            for (var i = 0; i < result.Values.length; i++) {
 			                chartData.push(
 			                    {
-			                        date: new Date(2017, 12, i + 1),
+			                        date: result.Dates[i],
 			                        value: result.Values[i],
-                                    volume: result.Volumes[i]
+			                        volume: result.Volumes[i]
 			                    });
 			            }
-			        },
-			        error: function(e) {
-			             alert("Unable to get results" + e);
+
+			            //Display orders
+			            for (var i = 0; i < result.Orders.length; i++) {
+			                $("#Orders").append("#" + i + " " + result.Orders[i].Date + " " + result.Orders[i].Type + " @ " + result.Orders[i].Price + "<br/>");
+			            }
+
+			            //Display stats
+			            $("#PnL").append("Actual (" + result.Stats.Pnl + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")");
+
+			            $("#Stats").append("Win ratio : " + result.Stats.WinRatio + "<br/>");
+			            $("#Stats").append("# t-pairs : " + result.Stats.TradePairCount + "<br/>");
+			            $("#Stats").append("Max win   : " + result.Stats.MaxWin + "<br/>");
+			            $("#Stats").append("Max loss  : " + result.Stats.MaxLoss + "<br/>");
+			            $("#Stats").append("Mean win  : " + result.Stats.MeanWin + "<br/>");
+			            $("#Stats").append("Mean loss : " + result.Stats.MeanLoss + "<br/>");
+			            $("#Stats").append("Max hold  : " + result.Stats.MaxHoldInHours + "<br/>");
+			            $("#Stats").append("Mean hold : " + result.Stats.MeanHoldInHours + "<br/>");
+			            $("#Stats").append("Min hold  : " + result.Stats.MinHoldInHours + "<br/>");
 			        }
 			    });
-
-
-			    //var firstDate = new Date(2012, 0, 1);
-			    //firstDate.setDate(firstDate.getDate() - 500);
-			    //firstDate.setHours(0, 0, 0, 0);
-
-			    //for (var i = 0; i < 500; i++) {
-			    //	var newDate = new Date(firstDate);
-			    //	newDate.setDate(newDate.getDate() + i);
-
-			    //	var a = Math.round(Math.random() * (40 + i)) + 100 + i;
-			    //	var b = Math.round(Math.random() * 100000000);
-
-			    //	chartData.push({
-			    //		date: newDate,
-			    //		value: a,
-			    //		volume: b
-			    //	});
-			    //}
 			}
 
-			var chart;
-
 			function createStockChart() {
-				chart = new AmCharts.AmStockChart();
+			    chart = new AmCharts.AmStockChart();
+
+			    chart.categoryAxesSettings = { minPeriod: "hh" };
 
 
 				// DATASETS //////////////////////////////////////////
@@ -146,6 +142,18 @@
 				// PERIOD SELECTOR ///////////////////////////////////
 				var periodSelector = new AmCharts.PeriodSelector();
 				periodSelector.periods = [{
+				    period: "DD",
+				    count: 1,
+				    label: "1 day"
+				}, {
+				    period: "DD",
+				    count: 2,
+				    label: "2 days"
+				}, {
+				    period: "DD",
+				    count: 4,
+				    label: "4 days"
+				}, {
 					period: "DD",
 					count: 10,
 					label: "10 days"

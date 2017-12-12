@@ -2,7 +2,7 @@
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
 
-    <p class="lead" style="margin-top:5px">BTC/EUR CEX.IO</p>
+    <p class="lead" style="margin-top: 5px">BTC/EUR CEX.IO</p>
     <p class="lead">
         <div>
             <div style="display: inline-block; position: relative">
@@ -26,7 +26,7 @@
                 </asp:DropDownList>
             </div>
             <div style="display: inline-block; position: relative; margin-left: 10px">
-                <asp:Button ID="SimulateButton" runat="server" OnClick="SimulateButton_Click" Text="Sim" />
+                <asp:Button ID="SimulateButton" runat="server" Text="Sim" />
             </div>
             <div style="display: inline-block; position: relative; margin-left: 10px">
                 <asp:TextBox ID="StrategyParametersTextBox" runat="server"></asp:TextBox>
@@ -44,18 +44,12 @@
     <div class="row">
         <div class="col-md-4">
             <h3>Orders</h3>
-            <p>
-                <asp:ListBox ID="OrdersListBox" runat="server" OnSelectedIndexChanged="OrdersListBox_SelectedIndexChanged" SelectionMode="Multiple"></asp:ListBox>
-            </p>
+            <div id="Orders"></div>
         </div>
         <div class="col-md-4">
             <h3>PnL</h3>
-            <p>
-                <asp:Label ID="PnLLabel" runat="server" Text="Label"></asp:Label>
-            </p>
-            <p>
-                <asp:PlaceHolder ID="StatsPlaceHolder" runat="server"></asp:PlaceHolder>
-            </p>
+            <div id="PnL"></div>
+            <div id="Stats"></div>
         </div>
         <div class="col-md-4">
         </div>
