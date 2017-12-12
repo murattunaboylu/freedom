@@ -74,7 +74,7 @@
 			            }
 
 			            //Display stats
-			            $("#Stats").append("Actual (" + result.Stats.Pnl + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")");
+			            $("#Stats").append("Actual (" + result.Stats.Pnl + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")<br/>");
 
 			            $("#Stats").append("Win ratio : " + result.Stats.WinRatio + "<br/>");
 			            $("#Stats").append("# t-pairs : " + result.Stats.TradePairCount + "<br/>");
