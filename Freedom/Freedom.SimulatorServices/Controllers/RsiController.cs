@@ -114,8 +114,6 @@ namespace Freedom.SimulatorServices.Controllers
                         RelativeStrengthIndexStrategy(ohlc, ohlcInTheSameWindow.Last().Start, parameters);
 
                         DataPoints.Insert(0, ohlc);
-
-                        //series.Points.AddY(low, high, open, close);
                     }
                 }
             }
@@ -133,9 +131,12 @@ namespace Freedom.SimulatorServices.Controllers
                 Values = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Close).ToList(),
                 Volumes = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Volume).ToList(),
                 Orders = Orders,
+                Events = Events,
                 Stats = stats
             };
         }
+
+        public List<Event> Events { get; set; } = new List<Event>();
 
         private void MovingAverageStrategy(OHLC ohlc, DateTime date)
         {
@@ -176,7 +177,7 @@ namespace Freedom.SimulatorServices.Controllers
                 //Stop loss
                 if (ohlc.Close < correction)
                 {
-                    CreateOrder(ohlc, date, "Sell");
+                    CreateOrder(ohlc, date, "Sell", "Stop loss");
                     State = TradingState.Initial;
                 }
 
@@ -186,14 +187,14 @@ namespace Freedom.SimulatorServices.Controllers
                 var limit = 50; //50 EUR profit limit based on daily average trading range of BTC/EUR first week of last month
                 if (ohlc.Close > Orders.Last().Price + limit)
                 {
-                    CreateOrder(ohlc, date, "Sell");
+                    CreateOrder(ohlc, date, "Sell", "Profit limit");
                     State = TradingState.Initial;
                 }
 
             }
         }
 
-        private string CreateOrder(OHLC ohlc, DateTime date, string type)
+        private string CreateOrder(OHLC ohlc, DateTime date, string type, string description = "")
         {
             var order = new Order()
             {
@@ -206,14 +207,15 @@ namespace Freedom.SimulatorServices.Controllers
 
             var message = $"{date} {type} 1 BTC at {ohlc.Close}";
 
-            //OrdersListBox.Items.Add(new ListItem(message));
+            if (string.IsNullOrEmpty(description))
+                description = type;
+
+            Events.Add(new Event(date, type) { description = description });
 
             return message;
         }
 
         public List<Order> Orders { get; set; }
-
-
 
         public List<OHLC> DataPoints = new List<OHLC>();
 
@@ -290,7 +292,7 @@ namespace Freedom.SimulatorServices.Controllers
                 var buyOrder = Orders.Last();
                 if ((double)((buyOrder.Price - ohlc.Close) / buyOrder.Price) > stopLossRatio)
                 {
-                    CreateOrder(ohlc, date, "Sell");
+                    CreateOrder(ohlc, date, "Sell", "Stop Loss");
                     State = TradingState.Initial;
                     return;//Otherwise might sell twice
                 }
@@ -299,7 +301,7 @@ namespace Freedom.SimulatorServices.Controllers
                 //by selling the asset when it closes over its 5-period moving average
                 if (ohlc.Close > sellSignal)
                 {
-                    CreateOrder(ohlc, date, "Sell");
+                    CreateOrder(ohlc, date, "Sell", "Closes over 5-d MA");
                     State = TradingState.Initial;
                 }
 
@@ -437,6 +439,29 @@ namespace Freedom.SimulatorServices.Controllers
         public Stats Stats { get; set; }
         public List<Order> Orders { get; set; }
         public List<DateTime> Dates { get; internal set; }
+        public List<Event> Events { get; internal set; }
+    }
+
+    public class Event
+    {
+        public Event(DateTime _date, string _text)
+        {
+            //Adding one minute to make the hour round
+            //Otherwise events do not show up on close inspection 
+            date = _date.AddMinutes(1).ToString("ddd MMM dd yyyy HH:mm:ss");
+            type = "sign";
+            graph = "graph1";
+            backgroundColor = "#85CDE6";
+            text = _text.First().ToString();
+            description = _text;
+        }
+
+        public string date { get; set; }
+        public string type { get; set; }
+        public string backgroundColor { get; set; }
+        public string graph { get; set; }
+        public string text { get; set; }
+        public string description { get; set; }
     }
 
     public class Order

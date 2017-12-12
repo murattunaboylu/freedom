@@ -26,10 +26,11 @@
 			});
 
 			var chartData = [];
+			var events = [];
 
 			function generateChartData() {
 			    $.ajax({
-			        url: "http://localhost:2635/rsi/20170701/20171101/120/?rsiPeriod=2&rsiThreshold=5&stopLossRatio=0.2",
+			        url: "http://localhost:2635/rsi/20170701/20170801/120/?rsiPeriod=2&rsiThreshold=5&stopLossRatio=0.2",
 			        type: "GET",
 			        async: false,
 			        cache: false,
@@ -44,6 +45,8 @@
 			                        volume: result.Volumes[i]
 			                    });
 			            }
+
+			            events = result.Events;
 
 			            //Display orders
 			            for (var i = 0; i < result.Orders.length; i++) {
@@ -182,95 +185,21 @@
 				panelsSettings.usePrefixes = true;
 				chart.panelsSettings = panelsSettings;
 
+				var stockEvents = [];
 
-				// EVENTS
-				var e0 = {
-					date: new Date(2010, 8, 19),
-					type: "sign",
-					backgroundColor: "#85CDE6",
-					graph: graph1,
-					text: "S",
-					description: "This is description of an event"
-				};
-				var e1 = {
-					date: new Date(2010, 10, 19),
-					type: "flag",
-					backgroundColor: "#FFFFFF",
-					backgroundAlpha: 0.5,
-					graph: graph1,
-					text: "F",
-					description: "Some longer\ntext can also\n be added"
-				};
-				var e2 = {
-					date: new Date(2010, 11, 10),
-					showOnAxis: true,
-					backgroundColor: "#85CDE6",
-					type: "pin",
-					text: "X",
-					graph: graph1,
-					description: "This is description of an event"
-				};
-				var e3 = {
-					date: new Date(2010, 11, 26),
-					showOnAxis: true,
-					backgroundColor: "#85CDE6",
-					type: "pin",
-					text: "Z",
-					graph: graph1,
-					description: "This is description of an event"
-				};
-				var e4 = {
-					date: new Date(2011, 0, 3),
-					type: "sign",
-					backgroundColor: "#85CDE6",
-					graph: graph1,
-					text: "U",
-					description: "This is description of an event"
-				};
-				var e5 = {
-					date: new Date(2011, 1, 6),
-					type: "sign",
-					graph: graph1,
-					text: "D",
-					description: "This is description of an event"
-				};
-				var e6 = {
-					date: new Date(2011, 3, 5),
-					type: "sign",
-					graph: graph1,
-					text: "L",
-					description: "This is description of an event"
-				};
-				var e7 = {
-					date: new Date(2011, 3, 5),
-					type: "sign",
-					graph: graph1,
-					text: "R",
-					description: "This is description of an event"
-				};
-				var e8 = {
-					date: new Date(2011, 5, 15),
-					type: "arrowUp",
-					backgroundColor: "#00CC00",
-					graph: graph1,
-					description: "This is description of an event"
-				};
-				var e9 = {
-					date: new Date(2011, 6, 25),
-					type: "arrowDown",
-					backgroundColor: "#CC0000",
-					graph: graph1,
-					description: "This is description of an event"
-				};
-				var e10 = {
-					date: new Date(2011, 8, 1),
-					type: "text",
-					graph: graph1,
-					text: "Longer text can\nalso be displayed",
-					description: "This is description of an event"
-				};
+				for (var i = 0; i < events.length; i++) {
+				    stockEvents.push(
+                        {
+                            date: new Date(events[i].date),
+                            type: "sign",
+                            backgroundColor: "#85CDE6",
+                            graph: graph1,
+                            text: events[i].text,
+                            description: "#" + i + " " + events[i].text + ":" + events[i].description
+                        });
+				}
 
-				dataSet.stockEvents = [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10];
+				dataSet.stockEvents = stockEvents;
 
 				chart.write('chartdiv');
 			}

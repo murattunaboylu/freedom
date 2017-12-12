@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
 using System.Web.UI;
-using System.Web.UI.DataVisualization.Charting;
-using System.Web.UI.WebControls;
 
 namespace Freedom.Backtesting
 {
