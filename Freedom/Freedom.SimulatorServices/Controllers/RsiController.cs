@@ -90,7 +90,10 @@ namespace Freedom.SimulatorServices.Controllers
 
                 for (DateTime i = start; i < end; i = i.AddMinutes(interval))
                 {
-                    var ohlcInTheSameWindow = ohlcList.Where(o => o.Start >= i && o.Start < i.AddMinutes(interval));
+                    var windowStart = i;
+                    var windowEnd = windowStart.AddMinutes(interval);
+
+                    var ohlcInTheSameWindow = ohlcList.Where(o => o.Start >= windowStart && o.Start < windowEnd).ToList();
 
                     if (ohlcInTheSameWindow.Any())
                     {
@@ -104,7 +107,7 @@ namespace Freedom.SimulatorServices.Controllers
                         var ohlc = new OHLC(open, high, low, close) { Volume = volume, Start = startDate };
 
                         //Check for indicators and make trading decisions
-                        RelativeStrengthIndexStrategy(ohlc, ohlcInTheSameWindow.Last().Start, parameters);
+                        RelativeStrengthIndexStrategy(ohlc, windowEnd, parameters);
 
                         DataPoints.Insert(0, ohlc);
                     }
