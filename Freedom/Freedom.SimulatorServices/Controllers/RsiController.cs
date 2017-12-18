@@ -102,9 +102,8 @@ namespace Freedom.SimulatorServices.Controllers
                         var open = ohlcInTheSameWindow.First().Open;
                         var close = ohlcInTheSameWindow.Last().Close;
                         var volume = ohlcInTheSameWindow.Sum(t => t.Volume);
-                        var startDate = ohlcInTheSameWindow.Min(t => t.Start);
-
-                        var ohlc = new OHLC(open, high, low, close) { Volume = volume, Start = startDate };
+                     
+                        var ohlc = new OHLC(open, high, low, close) { Volume = volume, Start = windowStart, End = windowEnd };
 
                         //Check for indicators and make trading decisions
                         RelativeStrengthIndexStrategy(ohlc, windowEnd, parameters);
@@ -123,7 +122,7 @@ namespace Freedom.SimulatorServices.Controllers
 
             return new SimulationResult()
             {
-                Dates = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Start).ToList(),
+                Dates = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.End).ToList(),
                 Values = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Close).ToList(),
                 Volumes = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Volume).ToList(),
                 Orders = Orders,
@@ -203,10 +202,7 @@ namespace Freedom.SimulatorServices.Controllers
 
             var message = $"{date} {type} 1 BTC at {ohlc.Close}";
 
-            if (string.IsNullOrEmpty(description))
-                description = type;
-
-            Events.Add(new Event(date, type) { description = description });
+            Events.Add(new Event(date, type, "@" + ohlc.Close + " " + description));
 
             return message;
         }
@@ -440,7 +436,7 @@ namespace Freedom.SimulatorServices.Controllers
 
     public class Event
     {
-        public Event(DateTime _date, string _text)
+        public Event(DateTime _date, string _text, string _description)
         {
             //Adding one minute to make the hour round
             //Otherwise events do not show up on close inspection 
@@ -449,7 +445,7 @@ namespace Freedom.SimulatorServices.Controllers
             graph = "graph1";
             backgroundColor = "#85CDE6";
             text = _text.First().ToString();
-            description = _text;
+            description = _text + " " + _description ;
         }
 
         public string date { get; set; }

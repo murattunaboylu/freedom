@@ -212,7 +212,7 @@
                         {
                             date: new Date(events[i].date),
                             type: "sign",
-                            backgroundColor: events[i].description === "Stop Loss" ? "#d65d5d" : "#85CDE6",
+                            backgroundColor: events[i].description.indexOf("Stop Loss") !== -1 ? "#d65d5d" : "#85CDE6",
                             graph: graph1,
                             text: events[i].text,
                             description: "#" + i + " " + events[i].text + ":" + events[i].description

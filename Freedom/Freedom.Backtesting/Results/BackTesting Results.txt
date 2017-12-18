@@ -1,5 +1,5 @@
-﻿Sim	Nam	Int	Sta	End Params		PnL
-1	Tre	120	Jul	Nov				+335
-2	Rsi	120	Jul	Nov	3,5,0.02	+683
-3	Rsi	120 Jul Nov 2,5,0.2		+2830
-4	
+﻿Sim	Nam	Ver	Int	Sta	End Params		PnL
+1	Tre	1	120	Jul	Nov				+335
+2	Rsi	1	120	Jul	Nov	3,5,0.02	+683
+3	Rsi	1	120 Jul Nov 2,5,0.2		+2830
+4	Rsi	2	120 Jul Nov 2,5,0.2		+2946
