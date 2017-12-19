@@ -129,7 +129,12 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Freedom.Algorithms\Freedom.Algorithms.csproj">
+      <Project>{B7E36264-41F5-434F-940B-07979C2F271E}</Project>
+      <Name>Freedom.Algorithms</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

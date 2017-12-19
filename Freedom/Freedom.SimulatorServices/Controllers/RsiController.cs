@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Freedom.Algorithms;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
@@ -102,13 +103,19 @@ namespace Freedom.SimulatorServices.Controllers
                         var open = ohlcInTheSameWindow.First().Open;
                         var close = ohlcInTheSameWindow.Last().Close;
                         var volume = ohlcInTheSameWindow.Sum(t => t.Volume);
-                     
+
                         var ohlc = new OHLC(open, high, low, close) { Volume = volume, Start = windowStart, End = windowEnd };
+
+                        DataPoints.Insert(0, ohlc);
 
                         //Check for indicators and make trading decisions
                         RelativeStrengthIndexStrategy(ohlc, windowEnd, parameters);
 
-                        DataPoints.Insert(0, ohlc);
+                        //Add Bollinger Bands
+                        var bb = CalculateBollingerBands(20, 2);
+
+                        UpperBand.Add(bb.UpperBand);
+                        LowerBand.Add(bb.LowerBand);
                     }
                 }
             }
@@ -125,13 +132,26 @@ namespace Freedom.SimulatorServices.Controllers
                 Dates = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.End).ToList(),
                 Values = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Close).ToList(),
                 Volumes = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.Volume).ToList(),
+                Upper = UpperBand,
+                Lower = LowerBand,
                 Orders = Orders,
                 Events = Events,
                 Stats = stats
             };
         }
 
+        public List<double> UpperBand { get; set; } = new List<double>();
+        public List<double> LowerBand { get; set; } = new List<double>();
+
         public List<Event> Events { get; set; } = new List<Event>();
+
+        private BollingerBandsAlgorithm.Result CalculateBollingerBands(int period, int sigmaWeight)
+        {
+            var bb = new BollingerBandsAlgorithm();
+            var result = bb.Calculate(DataPoints.Take(period).Select(p => p.Close).ToList(), period, sigmaWeight);
+
+            return result;
+        }
 
         private void MovingAverageStrategy(OHLC ohlc, DateTime date)
         {
@@ -266,6 +286,9 @@ namespace Freedom.SimulatorServices.Controllers
             var direction = CalculateMovingAverage(200);
             var sellSignal = CalculateMovingAverage(5);
             var rsi = CalculateRelativeStrengthIndex(rsiPeriod);
+            var bb = CalculateBollingerBands(20, 2);
+            var percentB = bb.PercentB;
+            var bandwidth = bb.Bandwidth;
 
             //Long Entry
             //When the price candle closes or is already above 200 day MA and RSI closes below 5 buy
@@ -274,7 +297,7 @@ namespace Freedom.SimulatorServices.Controllers
             {
                 if (ohlc.High > direction && rsi < rsiThreshold)
                 {
-                    CreateOrder(ohlc, date, "Buy");
+                    CreateOrder(ohlc, date, "Buy", $"<br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
                     State = TradingState.MonitoringDownTrend;
                 }
             }
@@ -284,7 +307,7 @@ namespace Freedom.SimulatorServices.Controllers
                 var buyOrder = Orders.Last();
                 if ((double)((buyOrder.Price - ohlc.Close) / buyOrder.Price) > stopLossRatio)
                 {
-                    CreateOrder(ohlc, date, "Sell", "Stop Loss");
+                    CreateOrder(ohlc, date, "Sell", $"Stop Loss <br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
                     State = TradingState.Initial;
                     return;//Otherwise might sell twice
                 }
@@ -293,7 +316,7 @@ namespace Freedom.SimulatorServices.Controllers
                 //by selling the asset when it closes over its 5-period moving average
                 if (ohlc.Close > sellSignal && ohlc.Close > buyOrder.Price)
                 {
-                    CreateOrder(ohlc, date, "Sell", "Closes over 5-d MA");
+                    CreateOrder(ohlc, date, "Sell", $"Closes over 5-d MA <br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
                     State = TradingState.Initial;
                 }
 
@@ -428,6 +451,8 @@ namespace Freedom.SimulatorServices.Controllers
         public string Description { get; set; }
         public List<decimal> Values { get; set; }
         public List<double> Volumes { get; set; }
+        public List<double> Lower { get; set; }
+        public List<double> Upper { get; set; }
         public Stats Stats { get; set; }
         public List<Order> Orders { get; set; }
         public List<DateTime> Dates { get; internal set; }
@@ -445,7 +470,7 @@ namespace Freedom.SimulatorServices.Controllers
             graph = "graph1";
             backgroundColor = "#85CDE6";
             text = _text.First().ToString();
-            description = _text + " " + _description ;
+            description = _text + " " + _description;
         }
 
         public string date { get; set; }

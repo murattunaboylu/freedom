@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.MarketDataImport", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.SimulatorServices", "Freedom.SimulatorServices\Freedom.SimulatorServices.csproj", "{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.Algorithms", "Freedom.Algorithms\Freedom.Algorithms.csproj", "{B7E36264-41F5-434F-940B-07979C2F271E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.Algorithms.Tests", "Freedom.Algorithms.Tests\Freedom.Algorithms.Tests.csproj", "{D0792798-9517-4482-93A6-7F0091452B73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{712E03A9-5414-4FC5-BB0E-30EF9C1D95EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7E36264-41F5-434F-940B-07979C2F271E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7E36264-41F5-434F-940B-07979C2F271E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7E36264-41F5-434F-940B-07979C2F271E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7E36264-41F5-434F-940B-07979C2F271E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0792798-9517-4482-93A6-7F0091452B73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0792798-9517-4482-93A6-7F0091452B73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0792798-9517-4482-93A6-7F0091452B73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0792798-9517-4482-93A6-7F0091452B73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

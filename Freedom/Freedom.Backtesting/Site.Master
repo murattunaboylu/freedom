@@ -25,11 +25,15 @@
 			});
 
 			var chartData = [];
+			var upperBand = [];
+			var lowerBand = [];
 			var events = [];
 
 			function simulate()
 			{
 			    chartData = [];
+			    upperBand = [];
+			    lowerBand = [];
 			    events = [];
 
 			    $("#Orders").append("<hr/>");
@@ -61,6 +65,29 @@
 			                        value: result.Values[i],
 			                        volume: result.Volumes[i]
 			                    });
+			            }
+
+			            if (result.Upper)
+			            {
+			                for (var i = 0; i < result.Upper.length; i++) {
+			                    upperBand.push(
+                                    {
+                                        date: result.Dates[i],
+                                        value: result.Upper[i],
+                                        volume: 0
+                                    });
+			                }
+			            }
+
+			            if (result.Lower) {
+			                for (var i = 0; i < result.Upper.length; i++) {
+			                    lowerBand.push(
+                                    {
+                                        date: result.Dates[i],
+                                        value: result.Lower[i],
+                                        volume: 0
+                                    });
+			                }
 			            }
 
 			            events = result.Events;
@@ -96,7 +123,8 @@
 
 
 				// DATASETS //////////////////////////////////////////
-				var dataSet = new AmCharts.DataSet();
+			    var dataSet = new AmCharts.DataSet();
+			    dataSet.title = "BTC/EUR";
 				dataSet.color = "#b0de09";
 				dataSet.fieldMappings = [{
 					fromField: "value",
@@ -108,8 +136,34 @@
 				dataSet.dataProvider = chartData;
 				dataSet.categoryField = "date";
 
+				var dataSet2 = new AmCharts.DataSet();
+				dataSet2.title = "Bollinger Upper Band";
+				dataSet2.color = "#0c8cd6";
+				dataSet2.fieldMappings = [{
+				    fromField: "value",
+				    toField: "value"
+				}, {
+				    fromField: "volume",
+				    toField: "volume"
+				}];
+				dataSet2.dataProvider = upperBand;
+				dataSet2.categoryField = "date";
+
+				var dataSet3 = new AmCharts.DataSet();
+				dataSet3.title = "Bollinger Lower Band";
+				dataSet3.color = "#0c8cd6";
+				dataSet3.fieldMappings = [{
+				    fromField: "value",
+				    toField: "value"
+				}, {
+				    fromField: "volume",
+				    toField: "volume"
+				}];
+				dataSet3.dataProvider = lowerBand;
+				dataSet3.categoryField = "date";
+
 				// set data sets to the chart
-				chart.dataSets = [dataSet];
+				chart.dataSets = [dataSet, dataSet2, dataSet3];
 
 				// PANELS ///////////////////////////////////////////
 				// first stock panel
@@ -117,10 +171,13 @@
 				stockPanel1.showCategoryAxis = false;
 				stockPanel1.title = "Value";
 				stockPanel1.percentHeight = 70;
+				stockPanel1.recalculateToPercents = "never";
 
 				// graph of first stock panel
 				var graph1 = new AmCharts.StockGraph();
 				graph1.valueField = "value";
+				graph1.comparable = true;
+				graph1.compareField = "value";
 				stockPanel1.addStockGraph(graph1);
 
 				// create stock legend
@@ -134,6 +191,7 @@
 				var stockPanel2 = new AmCharts.StockPanel();
 				stockPanel2.title = "Volume";
 				stockPanel2.percentHeight = 30;
+
 				var graph2 = new AmCharts.StockGraph();
 				graph2.valueField = "volume";
 				graph2.type = "column";
@@ -220,6 +278,11 @@
 				}
 
 				dataSet.stockEvents = stockEvents;
+
+			    // DATA SET SELECTOR
+				var dataSetSelector = new AmCharts.DataSetSelector();
+				dataSetSelector.position = "left";
+				chart.dataSetSelector = dataSetSelector;
 
 				chart.write('chartdiv');
 			}
