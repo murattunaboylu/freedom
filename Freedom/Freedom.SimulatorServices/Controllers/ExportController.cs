@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.Remoting.Messaging;
 using System.Web.Http;
 using System.Web.Http.Cors;
 
@@ -26,10 +27,11 @@ namespace Freedom.SimulatorServices.Controllers
             var intervalInMinutes = interval;
 
             var exportLines = Export(startDate, endDate, intervalInMinutes, parameters);
+            var export = exportLines.Aggregate((sum, s) => sum + Environment.NewLine + s);
 
             var result = new HttpResponseMessage(HttpStatusCode.OK);
 
-            result.Content = new StringContent(exportLines.First());
+            result.Content = new StringContent(export);
 
             result.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
             {
@@ -46,6 +48,7 @@ namespace Freedom.SimulatorServices.Controllers
         public List<string> Export(DateTime start, DateTime end, int interval, StrategyParameters parameters)
         {
             //Read the OHLC from database
+
             var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
 
             List<OHLC> ohlcList = new List<OHLC>();
@@ -108,24 +111,90 @@ namespace Freedom.SimulatorServices.Controllers
 
                     if (ohlcInTheSameWindow.Any())
                     {
-                        var low = ohlcInTheSameWindow.Select(t => t.Low).Min();
-                        var high = ohlcInTheSameWindow.Select(t => t.High).Max();
-                        var open = ohlcInTheSameWindow.First().Open;
-                        var close = ohlcInTheSameWindow.Last().Close;
-                        var volume = ohlcInTheSameWindow.Sum(t => t.Volume);
+                        var low = Math.Round(ohlcInTheSameWindow.Select(t => t.Low).Min(),2);
+                        var high = Math.Round(ohlcInTheSameWindow.Select(t => t.High).Max(), 2);
+                        var open = Math.Round(ohlcInTheSameWindow.First().Open, 2);
+                        var close = Math.Round(ohlcInTheSameWindow.Last().Close, 2);
+                        var volume = Math.Round(ohlcInTheSameWindow.Sum(t => t.Volume), 2);
 
-                        var ohlc = new OHLC(open, high, low, close) { Volume = volume, Start = windowStart, End = windowEnd };
+                        var ohlc = new OhlcIndicators(open, high, low, close)
+                        {
+                            Volume = volume, Start = windowStart, End = windowEnd,
+                        };
 
                         DataPoints.Add(ohlc);
+
+                        var prices = DataPoints.Select(d => d.Close).ToList();
+
+                        ohlc.Mva10 = Math.Round(CalculateMovingAverage(prices, 10), 2);
+                        ohlc.Mva200 = Math.Round(CalculateMovingAverage(prices, 200), 2);
+                        ohlc.Rsi2 = Math.Round(CalculateRelativeStrengthIndex(prices, 3), 2);
+                        ohlc.Rsi14 = Math.Round(CalculateRelativeStrengthIndex(prices, 15), 2);
+                        var bb = CalculateBollingerBands(prices, 20, 2);
+                        ohlc.PercentB = Math.Round(bb.PercentB, 2);
+                        ohlc.Bandwidth = Math.Round(bb.Bandwidth, 2);
                     }
                 }
             }
 
-            var exportLines = DataPoints.Select(d => $"{d.Start},{d.Close}");
+            var exportLines = DataPoints.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth}").ToList();
 
-            return exportLines.ToList();
+            exportLines.Insert(0, "Date, Open, High, Low, Close, Volume, Mva10, Mva200, Rsi2, Rsi14, PercentB, Bandwidth");
+
+            return exportLines;
         }
 
-        public List<OHLC> DataPoints { get; set; } = new List<OHLC>();
+        private decimal CalculateMovingAverage(List<decimal> prices, int dataPointCount)
+        {
+            return prices.Skip(prices.Count - dataPointCount).Take(dataPointCount).Average();
+        }
+
+        private double CalculateRelativeStrengthIndex(List<decimal> prices, int dataPointCount)
+        {
+            decimal sumUp = 0;
+            decimal sumDown = 0;
+
+            var dataPoints = prices.Skip(prices.Count - dataPointCount).Take(dataPointCount).ToList();
+            var n = dataPoints.Count;
+
+            if (n == 1)
+                return 50;
+
+            //Up sum
+            //Down sum
+            for (int i = 1; i < n; i++)
+            {
+                var change = dataPoints[i] - dataPoints[i - 1];
+
+                if (change > 0)
+                {
+                    sumUp += change;
+                }
+                else
+                {
+                    sumDown -= change;
+                }
+            }
+
+            //Means of sums
+            var meanUp = sumUp / (n - 1);
+            var meanDown = sumDown / (n - 1);
+
+            //RSI = meanUp/(meanUp+meanDown)
+            //Preventing divide by 0 - by checking meanUp and Down equality
+            var rsi = meanUp == meanDown ? 0.5m : meanUp / (meanUp + meanDown) * 100;
+
+            return (double)rsi;
+        }
+
+        private BollingerBandsAlgorithm.Result CalculateBollingerBands(List<decimal> prices, int period, int sigmaWeight)
+        {
+            var bb = new BollingerBandsAlgorithm();
+            var result = bb.Calculate(prices.Skip(prices.Count - period).Take(period).ToList(), period, sigmaWeight);
+
+            return result;
+        }
+
+        public List<OhlcIndicators> DataPoints { get; set; } = new List<OhlcIndicators>();
     }
 }

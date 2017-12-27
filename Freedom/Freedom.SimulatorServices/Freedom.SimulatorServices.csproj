@@ -114,6 +114,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\ExportController.cs" />
     <Compile Include="Controllers\RsiController.cs" />
+    <Compile Include="OhlcIndicators.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -122,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
+    <Content Include="Exports\marketdata.export.20171227160042.csv" />
     <None Include="Properties\PublishProfiles\FreedomSimulatorServicesApi.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
