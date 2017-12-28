@@ -9,3 +9,6 @@ test = full[800:]
 # Save it to disk
 train.to_csv('../input/train.csv', encoding='utf-8')
 test.to_csv('../input/test.csv', encoding='utf-8')
+
+# Save the test as json too
+test.to_json('../input/test.json', orient='records', lines=True)
