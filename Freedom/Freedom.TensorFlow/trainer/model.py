@@ -2,9 +2,9 @@ import tensorflow as tf
 
 # Define the format of your input data including unused columns
 CSV_COLUMNS = ['Id', 'Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Mva10', 'Mva200', 'Rsi2', 'Rsi14', 'PercentB',
-               'Bandwidth']
+               'Bandwidth', 'Action']
 
-CSV_COLUMN_DEFAULTS = [[0], [''], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [.0], [.0]]
+CSV_COLUMN_DEFAULTS = [[0], [''], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [.0], [.0], ['H']]
 LABEL_COLUMN = 'Action'
 LABELS = ['B', 'H', 'S']
 
