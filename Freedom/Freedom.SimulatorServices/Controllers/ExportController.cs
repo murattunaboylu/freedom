@@ -49,7 +49,7 @@ namespace Freedom.SimulatorServices.Controllers
         {
             //Read the OHLC from database
 
-            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-azure"].ConnectionString;
 
             List<OHLC> ohlcList = new List<OHLC>();
 
@@ -132,17 +132,65 @@ namespace Freedom.SimulatorServices.Controllers
                         ohlc.Rsi14 = Math.Round(CalculateRelativeStrengthIndex(prices, 15), 2);
                         var bb = CalculateBollingerBands(prices, 20, 2);
                         ohlc.PercentB = Math.Round(bb.PercentB, 2);
-                        ohlc.Bandwidth = Math.Round(bb.Bandwidth, 2);
+                        ohlc.Bandwidth = Math.Round(bb.Bandwidth, 2);                        
                     }
                 }
             }
 
-            var exportLines = DataPoints.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth}").ToList();
+            //Annotate
+            //Calculate action - looking backward and forward
+            //which is obviously not possible in real time trading
+            CalculateAction(10, 4);
 
-            exportLines.Insert(0, "Date, Open, High, Low, Close, Volume, Mva10, Mva200, Rsi2, Rsi14, PercentB, Bandwidth");
+            var exportLines = DataPoints.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth},{d.Action}").ToList();
+
+            exportLines.Insert(0, "Date, Open, High, Low, Close, Volume, Mva10, Mva200, Rsi2, Rsi14, PercentB, Bandwidth, Action");
 
             return exportLines;
         }
+
+        private void CalculateAction(int dataPointCount, int profitThreshold)
+        {
+            //Set all actions to Hold
+            DataPoints.ForEach(d => d.Action = "H");
+
+            var totalProfit = 0m;
+            var lastProfit = 0m;
+
+            OhlcIndicators lastSell = null;
+
+            for (int i = 0; i < DataPoints.Count - dataPointCount; i++)
+            {
+                var past = DataPoints.Skip(i).Take(dataPointCount);
+                var min = past.Min(d => d.Close);
+                var future = DataPoints.Skip(i + dataPointCount).Take(dataPointCount);
+                var max = future.Max(d => d.Close);
+
+                var profit = max - min;
+                var profitRatio = profit / max * 100;
+
+                if (profitRatio >= profitThreshold)
+                {
+                    //Find the buy and sell dates
+                    var buy = past.FirstOrDefault(d => d.Close == min);
+                    var sell = future.FirstOrDefault(d => d.Close == max);
+
+                    if (buy.Action == "B")
+                    {
+                        lastSell.Action = "H";
+                        totalProfit -= lastProfit;
+                    }
+                   
+                    buy.Action = "B";
+                    sell.Action = "S";
+                    lastSell = sell;
+                    lastProfit = profit;
+                    
+                    totalProfit += profit;
+                }
+
+            }
+         }
 
         private decimal CalculateMovingAverage(List<decimal> prices, int dataPointCount)
         {

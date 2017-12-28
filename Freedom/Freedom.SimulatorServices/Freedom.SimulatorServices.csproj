@@ -124,6 +124,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <Content Include="Exports\marketdata.export.20171227160042.csv" />
+    <Content Include="Exports\marketdata.export.20171227193809.csv" />
     <None Include="Properties\PublishProfiles\FreedomSimulatorServicesApi.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>

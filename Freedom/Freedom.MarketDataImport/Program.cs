@@ -45,7 +45,8 @@ namespace Freedom.MarketDataImport
                 ohlc.Start = DateTime.ParseExact(data[8], "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 ohlc.End = DateTime.ParseExact(data[9], "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 
-                ohlcList.Add(ohlc);
+                if(ohlc.Start > DateTime.ParseExact("2017-08-26 12:33:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture))
+                    ohlcList.Add(ohlc);
 
                 lastClose = close;
             }
@@ -61,8 +62,6 @@ namespace Freedom.MarketDataImport
             builder.UserID = "marketdata";
             builder.Password = "mar20X/b";
             builder.InitialCatalog = "marketdata";
-
-            //2017 - 08 - 29 16:50:00.000 onwards
 
             using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
             {

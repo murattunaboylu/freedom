@@ -17,5 +17,7 @@ namespace Freedom.SimulatorServices
         public double Rsi14 { get; set; }
         public double PercentB { get; set; }
         public double Bandwidth { get; set; }
+
+        public string Action { get; set; }
     }
 }
