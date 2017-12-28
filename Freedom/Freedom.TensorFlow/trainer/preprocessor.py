@@ -7,8 +7,9 @@ train = full[0:800]
 test = full[800:]
 
 # Save it to disk
-train.to_csv('../input/train.csv', encoding='utf-8')
-test.to_csv('../input/test.csv', encoding='utf-8')
+# train.to_csv('../input/train.csv', encoding='utf-8')
+# test.to_csv('../input/test.csv', encoding='utf-8')
 
 # Save the test as json too
-test.to_json('../input/test.json', orient='records', lines=True)
+cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'Mva10', 'Mva200', 'Rsi2', 'Rsi14', 'PercentB', 'Bandwidth']
+test[cols].to_json('../input/test.json', orient='records', lines=True)

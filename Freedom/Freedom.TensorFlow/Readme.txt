@@ -50,7 +50,7 @@ gcloud ml-engine jobs submit training $JOB_NAME --job-dir $OUTPUT_PATH --runtime
 gcloud ml-engine local predict \
 --model-dir=$MODEL_DIR/export/Servo/1505056497/ \
 --json-instances \
-data/test.json
+input/test.json
 
 # write to a file
 gcloud ml-engine local predict \
