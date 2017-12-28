@@ -1,5 +1,0 @@
-INFO:tensorflow:Finished evaluation at 2017-12-28-12:00:36
-INFO:tensorflow:Saving dict for global step 1000: accuracy = 0.79875, accuracy/baseline_label_mean = 0.91125, accuracy/threshold_0.500000_mean = 0.79875, auc = 0.530697, auc_precision_recall = 0
-.870128, global_step = 1000, labels/actual_label_mean = 0.91125, labels/prediction_mean = 0.955933, loss = 0.314607, precision/positive_threshold_0.500000_mean = 0.855, recall/positive_threshold
-_0.500000_mean = 1.0
-
