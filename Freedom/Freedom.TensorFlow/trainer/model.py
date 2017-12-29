@@ -129,6 +129,7 @@ def build_estimator(config, embedding_size=8, hidden_units=None):
         config=config,
         feature_columns=deep_columns,
         hidden_units=[1024, 512, 256],
+	n_classes=3,
         label_keys=['B', 'H', 'S'],
         optimizer=tf.train.ProximalAdagradOptimizer(
             learning_rate=0.1,
@@ -284,4 +285,4 @@ def generate_input_fn(filenames,
             allow_smaller_final_batch=True
         )
 
-    return features, parse_label_column(features.pop(LABEL_COLUMN))
+    return features, features.pop(LABEL_COLUMN)
