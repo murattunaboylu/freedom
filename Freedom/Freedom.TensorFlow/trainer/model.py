@@ -52,7 +52,7 @@ UNUSED_COLUMNS = set(CSV_COLUMNS) - {col.name for col in INPUT_COLUMNS} - {LABEL
 
 
 def build_estimator(config, embedding_size=8, hidden_units=None):
-    """Build a wide and deep model for predicting survival rates of Titanic disaster.
+    """Build a wide and deep model for predicting buy and sell orders for BTX/EUR
 
     Wide and deep models use deep neural nets to learn high level abstractions
     about complex features or interactions between such features.
@@ -129,7 +129,7 @@ def build_estimator(config, embedding_size=8, hidden_units=None):
         config=config,
         feature_columns=deep_columns,
         hidden_units=[1024, 512, 256],
-	n_classes=3,
+        n_classes=3,
         label_keys=['B', 'H', 'S'],
         optimizer=tf.train.ProximalAdagradOptimizer(
             learning_rate=0.1,

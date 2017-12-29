@@ -1,16 +1,24 @@
-reader = open('../output/output.parent.dnn.txt')
-writer = open('../data/titanic.prediction.12.csv', 'w')
+reader = open('../output/output.model-4.txt')
+writer = open('../output/output.model-4-results.txt', 'w')
 
-writer.write('PassengerId,Survived\n')
+writer.write('Action\n')
 
 header = reader.readline()
 line = reader.readline()
-i = 892
+i = 0
+last_action = 'S'
 while line:  # and i < 900:
-    prob = line[13:].strip()
+    prob = line[20:].strip()
     prob = prob[1:-1].split(', ')
-    survived = 1 if prob[1] > prob[0] else 0
-    writer.write("{},{}\n".format(i, survived))
+    if last_action == 'S':
+        action = 'B' if max(prob) == prob[0] else 'H'
+    else:
+        action = 'S' if max(prob) == prob[2] else 'H'
+
+    if action != 'H':
+        last_action = action
+
+    writer.write(action + '\n')
     line = reader.readline()
     i += 1
 
