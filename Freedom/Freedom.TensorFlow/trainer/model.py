@@ -129,6 +129,7 @@ def build_estimator(config, embedding_size=8, hidden_units=None):
         config=config,
         feature_columns=deep_columns,
         hidden_units=[1024, 512, 256],
+        label_keys=['B', 'H', 'S'],
         optimizer=tf.train.ProximalAdagradOptimizer(
             learning_rate=0.1,
             l1_regularization_strength=0.001

@@ -44,7 +44,7 @@ def generate_experiment_fn(**experiment_args):
         return tf.contrib.learn.Experiment(
             model.build_estimator(
                 embedding_size=hparams.embedding_size,
-                # Construct layers sizes with exponetial decay
+                # Construct layers sizes with exponential decay
                 hidden_units=[
                     max(2, int(hparams.first_layer_size *
                                hparams.scale_factor**i))
@@ -57,7 +57,6 @@ def generate_experiment_fn(**experiment_args):
             **experiment_args
         )
     return _experiment_fn
-
 
 
 if __name__ == '__main__':
