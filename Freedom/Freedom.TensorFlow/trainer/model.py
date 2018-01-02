@@ -11,29 +11,6 @@ LABELS = ['B', 'H', 'S']
 # Define the initial ingestion of each feature used by your model.
 # Additionally, provide metadata about the feature.
 INPUT_COLUMNS = [
-    # Categorical base columns
-
-    # For categorical columns with known values we can provide lists
-    # of values ahead of time.
-    # tf.feature_column.categorical_column_with_vocabulary_list(
-    #     'Pclass', [1, 2, 3]),
-    # tf.feature_column.categorical_column_with_vocabulary_list(
-    #     'Sex',
-    #     ['male', 'female']),
-
-    # Feature for cabin
-    # Screening the values
-    # cat data/train.data.csv | cut -d, -f12 | sort | uniq
-    # tf.feature_column.categorical_column_with_vocabulary_list(
-    #     'CabinClass',
-    #     ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'T']),
-    # tf.feature_column.categorical_column_with_vocabulary_list(
-    #     'Embarked',
-    #     ['S', 'C', ' Q']),
-    # tf.feature_column.categorical_column_with_vocabulary_list(
-    #     'Title',
-    #     ['Mr.', 'Mrs.', 'Miss.', 'Master.', 'Dr.', 'Captain.', 'Mlle.', 'Col.', 'Rev.']),
-
     # Continuous base columns.
     tf.feature_column.numeric_column('Open'),
     tf.feature_column.numeric_column('High'),
@@ -52,56 +29,10 @@ UNUSED_COLUMNS = set(CSV_COLUMNS) - {col.name for col in INPUT_COLUMNS} - {LABEL
 
 
 def build_estimator(config, embedding_size=8, hidden_units=None):
-    """Build a wide and deep model for predicting buy and sell orders for BTX/EUR
+    '''Build a deep model for predicting buy and sell orders for BTX/EUR'''
 
-    Wide and deep models use deep neural nets to learn high level abstractions
-    about complex features or interactions between such features.
-    These models then combined the outputs from the DNN with a linear regression
-    performed on simpler features. This provides a balance between power and
-    speed that is effective on many structured data problems.
-
-    You can read more about wide and deep models here:
-    https://research.googleblog.com/2016/06/wide-deep-learning-better-together-with.html
-
-    To define model we can use the prebuilt DNNCombinedLinearClassifier class,
-    and need only define the data transformations particular to our dataset, and
-    then
-    assign these (potentially) transformed features to either the DNN, or linear
-    regression portion of the model.
-
-    Args:
-    config: tf.contrib.learn.RunConfig defining the runtime environment for the
-      estimator (including model_dir).
-    embedding_size: int, the number of dimensions used to represent categorical
-      features when providing them as inputs to the DNN.
-    hidden_units: [int], the layer sizes of the DNN (input layer first)
-    learning_rate: float, the learning rate for the optimizer.
-    Returns:
-    A DNNCombinedLinearClassifier
-    """
     (open, high, low, close, volume, mva10, mva200, rsi2, rsi14, percentB, bandwidth) = INPUT_COLUMNS
     """Build an estimator."""
-
-    # Reused Transformations.
-    # Continuous columns can be converted to categorical via bucketization
-    # age_buckets = tf.feature_column.bucketized_column(
-    #     age, boundaries=[10, 20, 30, 35, 40, 45, 50, 55, 60, 65])
-
-    # Wide columns and deep columns.
-    wide_columns = [
-        # Interactions between different categorical features can also
-        # be added as new virtual features.
-        # tf.feature_column.crossed_column(
-        #     ['Pclass', 'Embarked'], hash_bucket_size=int(1e4)),
-        # tf.feature_column.crossed_column(
-        #     [age_buckets, sex], hash_bucket_size=int(1e4)),
-        # p_class,
-        # sex,
-        # embarked,
-        # age_buckets,
-        # cabin_class,
-        # title
-    ]
 
     deep_columns = [
         # Use indicator columns for low dimensional vocabularies
