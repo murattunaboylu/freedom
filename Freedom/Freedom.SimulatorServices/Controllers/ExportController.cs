@@ -48,8 +48,7 @@ namespace Freedom.SimulatorServices.Controllers
         public List<string> Export(DateTime start, DateTime end, int interval, StrategyParameters parameters)
         {
             //Read the OHLC from database
-
-            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-azure"].ConnectionString;
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
 
             List<OHLC> ohlcList = new List<OHLC>();
 
@@ -144,7 +143,7 @@ namespace Freedom.SimulatorServices.Controllers
 
             var exportLines = DataPoints.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth},{d.Action}").ToList();
 
-            exportLines.Insert(0, "Date, Open, High, Low, Close, Volume, Mva10, Mva200, Rsi2, Rsi14, PercentB, Bandwidth, Action");
+            exportLines.Insert(0, "Date,Open,High,Low,Close,Volume,Mva10,Mva200,Rsi2,Rsi14,PercentB,Bandwidth,Action");
 
             return exportLines;
         }
@@ -157,13 +156,13 @@ namespace Freedom.SimulatorServices.Controllers
             var totalProfit = 0m;
             var lastProfit = 0m;
 
-            OhlcIndicators lastSell = null;
+            OhlcIndicators lastSell = new OhlcIndicators(0,0,0,0);
 
             for (int i = 0; i < DataPoints.Count - dataPointCount; i++)
             {
-                var past = DataPoints.Skip(i).Take(dataPointCount);
+                var past = DataPoints.Skip(i).Take(dataPointCount).ToList();
                 var min = past.Min(d => d.Close);
-                var future = DataPoints.Skip(i + dataPointCount).Take(dataPointCount);
+                var future = DataPoints.Skip(i + dataPointCount).Take(dataPointCount).ToList();
                 var max = future.Max(d => d.Close);
 
                 var profit = max - min;
@@ -172,16 +171,34 @@ namespace Freedom.SimulatorServices.Controllers
                 if (profitRatio >= profitThreshold)
                 {
                     //Find the buy and sell dates
-                    var buy = past.FirstOrDefault(d => d.Close == min);
-                    var sell = future.FirstOrDefault(d => d.Close == max);
+                    var buy = past.First(d => d.Close == min);
+                    var sell = future.First(d => d.Close == max);
 
+                    //If sell is already detected then skip
+                    if (sell.Action == "S")
+                        continue;
+
+                    
+                    //If buy action is already detected
+                    //then revert the matching S back to H for a longer hold
                     if (buy.Action == "B")
                     {
                         lastSell.Action = "H";
                         totalProfit -= lastProfit;
                     }
-                   
-                    buy.Action = "B";
+
+                    //If buy action is S
+                    //then it doesn't make sense to buy from the same price we sell
+                    //revert the S to H for holding longer
+                    if (buy.Action == "S")
+                    {
+                        buy.Action = "H";
+                    }
+                    else
+                    {
+                        buy.Action = "B";
+                    }
+                    
                     sell.Action = "S";
                     lastSell = sell;
                     lastProfit = profit;
@@ -190,7 +207,34 @@ namespace Freedom.SimulatorServices.Controllers
                 }
 
             }
-         }
+
+            Debug.WriteLine($"Total Profit: {totalProfit}");
+            Debug.WriteLine($"Buys: {DataPoints.Count(d=>d.Action == "B")} Total: {DataPoints.Where(d => d.Action == "B").Sum(d=>d.Close)}");
+            Debug.WriteLine($"Sells: {DataPoints.Count(d => d.Action == "S")} Total: {DataPoints.Where(d => d.Action == "S").Sum(d => d.Close)}");
+
+            var depth = 0;
+            var maxDepth = 0;
+            var action = "B";
+            foreach (var dataPoint in DataPoints)
+            {
+                if (dataPoint.Action == "H")
+                    continue;
+
+                if (dataPoint.Action == action)
+                {
+                    depth++;
+                }
+                else
+                {
+                    depth = 0;
+                    action = dataPoint.Action;
+                }
+
+                maxDepth = Math.Max(depth, maxDepth);
+            }
+
+            Debug.WriteLine($"Longest run {maxDepth}");
+        }
 
         private decimal CalculateMovingAverage(List<decimal> prices, int dataPointCount)
         {
