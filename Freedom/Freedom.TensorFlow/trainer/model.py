@@ -56,6 +56,8 @@ def build_estimator(config, embedding_size=8, hidden_units=None):
       fix_global_step_increment_bug=True
     )'''
 
+
+    #DNN Classifier is defined in dnn.py
     return tf.contrib.learn.DNNClassifier(
         config=config,
         feature_columns=deep_columns,

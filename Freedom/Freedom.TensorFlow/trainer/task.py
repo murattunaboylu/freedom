@@ -34,6 +34,7 @@ def generate_experiment_fn(**experiment_args):
             skip_header_lines=1,
             num_epochs=hparams.num_epochs,
             batch_size=hparams.train_batch_size,
+            shuffle=False
         )
         # Don't shuffle evaluation data
         eval_input = lambda: model.generate_input_fn(
