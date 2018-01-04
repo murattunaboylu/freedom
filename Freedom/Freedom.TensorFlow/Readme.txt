@@ -56,7 +56,7 @@ input/test.json
 gcloud ml-engine local predict \
 --model-dir=$MODEL_DIR/export/Servo/1515068457/ \
 --json-instances \
-input/test.json > output.model-1.txt
+input/test.json > output\output.model-1.txt
 
 # deploy to GCP as a new version
 gcloud ml-engine versions create v2 --model=titanic --origin=$MODEL_BINARIES --staging-bucket=gs://titanic-model

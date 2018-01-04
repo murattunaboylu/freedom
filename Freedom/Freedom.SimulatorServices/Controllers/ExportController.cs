@@ -110,7 +110,7 @@ namespace Freedom.SimulatorServices.Controllers
 
                     if (ohlcInTheSameWindow.Any())
                     {
-                        var low = Math.Round(ohlcInTheSameWindow.Select(t => t.Low).Min(),2);
+                        var low = Math.Round(ohlcInTheSameWindow.Select(t => t.Low).Min(), 2);
                         var high = Math.Round(ohlcInTheSameWindow.Select(t => t.High).Max(), 2);
                         var open = Math.Round(ohlcInTheSameWindow.First().Open, 2);
                         var close = Math.Round(ohlcInTheSameWindow.Last().Close, 2);
@@ -118,7 +118,9 @@ namespace Freedom.SimulatorServices.Controllers
 
                         var ohlc = new OhlcIndicators(open, high, low, close)
                         {
-                            Volume = volume, Start = windowStart, End = windowEnd,
+                            Volume = volume,
+                            Start = windowStart,
+                            End = windowEnd,
                         };
 
                         DataPoints.Add(ohlc);
@@ -131,7 +133,7 @@ namespace Freedom.SimulatorServices.Controllers
                         ohlc.Rsi14 = Math.Round(CalculateRelativeStrengthIndex(prices, 15), 2);
                         var bb = CalculateBollingerBands(prices, 20, 2);
                         ohlc.PercentB = Math.Round(bb.PercentB, 2);
-                        ohlc.Bandwidth = Math.Round(bb.Bandwidth, 2);                        
+                        ohlc.Bandwidth = Math.Round(bb.Bandwidth, 2);
                     }
                 }
             }
@@ -141,7 +143,11 @@ namespace Freedom.SimulatorServices.Controllers
             //which is obviously not possible in real time trading
             CalculateAction(10, 4);
 
-            var exportLines = DataPoints.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth},{d.Action}").ToList();
+            var balanced = OverSample(10);
+
+            var normalized = Normalize(balanced);
+
+            var exportLines = normalized.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth},{d.Action}").ToList();
 
             exportLines.Insert(0, "Date,Open,High,Low,Close,Volume,Mva10,Mva200,Rsi2,Rsi14,PercentB,Bandwidth,Action");
 
@@ -156,7 +162,7 @@ namespace Freedom.SimulatorServices.Controllers
             var totalProfit = 0m;
             var lastProfit = 0m;
 
-            OhlcIndicators lastSell = new OhlcIndicators(0,0,0,0);
+            OhlcIndicators lastSell = new OhlcIndicators(0, 0, 0, 0);
 
             for (int i = 0; i < DataPoints.Count - dataPointCount; i++)
             {
@@ -178,7 +184,7 @@ namespace Freedom.SimulatorServices.Controllers
                     if (sell.Action == "S")
                         continue;
 
-                    
+
                     //If buy action is already detected
                     //then revert the matching S back to H for a longer hold
                     if (buy.Action == "B")
@@ -198,18 +204,18 @@ namespace Freedom.SimulatorServices.Controllers
                     {
                         buy.Action = "B";
                     }
-                    
+
                     sell.Action = "S";
                     lastSell = sell;
                     lastProfit = profit;
-                    
+
                     totalProfit += profit;
                 }
 
             }
 
             Debug.WriteLine($"Total Profit: {totalProfit}");
-            Debug.WriteLine($"Buys: {DataPoints.Count(d=>d.Action == "B")} Total: {DataPoints.Where(d => d.Action == "B").Sum(d=>d.Close)}");
+            Debug.WriteLine($"Buys: {DataPoints.Count(d => d.Action == "B")} Total: {DataPoints.Where(d => d.Action == "B").Sum(d => d.Close)}");
             Debug.WriteLine($"Sells: {DataPoints.Count(d => d.Action == "S")} Total: {DataPoints.Where(d => d.Action == "S").Sum(d => d.Close)}");
 
             var depth = 0;
@@ -234,6 +240,51 @@ namespace Freedom.SimulatorServices.Controllers
             }
 
             Debug.WriteLine($"Longest run {maxDepth}");
+        }
+
+        private List<OhlcIndicators> OverSample(int factor)
+        {
+            var overSampledDataPoints = new List<OhlcIndicators>();
+
+            foreach (var dataPoint in DataPoints)
+            {
+                if (dataPoint.Action == "H")
+                    overSampledDataPoints.Add(dataPoint);
+                else
+                {
+                    for (int i = 0; i < factor; i++)
+                    {
+                        overSampledDataPoints.Add(dataPoint.Clone());
+                    }
+                }
+            }
+
+            return overSampledDataPoints;
+        }
+
+        private List<OhlcIndicators> Normalize(List<OhlcIndicators> dataPoints)
+        {
+            var maxClose = 100000;
+            dataPoints.ForEach(d => d.Close = Math.Round(d.Close / maxClose, 6));
+
+            //Needs to be fixed to a value
+            var maxVolume = dataPoints.Max(d => d.Volume);
+            dataPoints.ForEach(d => d.Volume = Math.Round(d.Volume / maxVolume, 6));
+
+            dataPoints.ForEach(d => d.Mva10 = Math.Round(d.Mva10 / maxClose, 6));
+
+            dataPoints.ForEach(d => d.Mva200 = Math.Round(d.Mva200 / maxClose, 6));
+
+            dataPoints.ForEach(d => d.Rsi2 = Math.Round(d.Rsi2 / 100, 2));
+
+            dataPoints.ForEach(d => d.Rsi14 = Math.Round(d.Rsi14 / 100, 2));
+
+            dataPoints.ForEach(d => d.PercentB = Math.Round(d.PercentB / 100, 2));
+
+            var maxBandwidth = dataPoints.Max(d => d.Bandwidth);
+            dataPoints.ForEach(d => d.Bandwidth = Math.Round(d.Bandwidth / maxBandwidth, 2));
+
+            return dataPoints;
         }
 
         private decimal CalculateMovingAverage(List<decimal> prices, int dataPointCount)

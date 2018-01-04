@@ -1,5 +1,5 @@
-reader = open('../output/output.model-5.txt')
-writer = open('../output/output.model-5-results.txt', 'w')
+reader = open('../output/output.model-13.txt')
+writer = open('../output/output.model-13-results.txt', 'w')
 
 writer.write('Action\n')
 

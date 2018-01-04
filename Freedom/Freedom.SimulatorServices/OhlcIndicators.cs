@@ -19,5 +19,10 @@ namespace Freedom.SimulatorServices
         public double Bandwidth { get; set; }
 
         public string Action { get; set; }
+
+        public OhlcIndicators Clone()
+        {
+            return (OhlcIndicators) MemberwiseClone();
+        }
     }
 }
