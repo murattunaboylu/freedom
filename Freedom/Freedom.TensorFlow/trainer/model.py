@@ -12,9 +12,9 @@ LABELS = ['B', 'H', 'S']
 # Additionally, provide metadata about the feature.
 INPUT_COLUMNS = [
     # Continuous base columns.
-    tf.feature_column.numeric_column('Open'),
-    tf.feature_column.numeric_column('High'),
-    tf.feature_column.numeric_column('Low'),
+    # tf.feature_column.numeric_column('Open'),
+    # tf.feature_column.numeric_column('High'),
+    # tf.feature_column.numeric_column('Low'),
     tf.feature_column.numeric_column('Close'),
     tf.feature_column.numeric_column('Volume'),
     tf.feature_column.numeric_column('Mva10'),
@@ -31,7 +31,7 @@ UNUSED_COLUMNS = set(CSV_COLUMNS) - {col.name for col in INPUT_COLUMNS} - {LABEL
 def build_estimator(config, embedding_size=8, hidden_units=None):
     '''Build a deep model for predicting buy and sell orders for BTX/EUR'''
 
-    (open, high, low, close, volume, mva10, mva200, rsi2, rsi14, percentB, bandwidth) = INPUT_COLUMNS
+    (close, volume, mva10, mva200, rsi2, rsi14, percentB, bandwidth) = INPUT_COLUMNS
     """Build an estimator."""
 
     deep_columns = [
@@ -45,7 +45,7 @@ def build_estimator(config, embedding_size=8, hidden_units=None):
         # tf.feature_column.embedding_column(
         #    native_country, dimension=embedding_size),
         # tf.feature_column.embedding_column(occupation, dimension=embedding_size),
-        open, high, low, close, volume, mva10, mva200, rsi2, rsi14, percentB, bandwidth
+        close, volume, mva10, mva200, rsi2, rsi14, percentB, bandwidth
     ]
 
     '''return tf.contrib.learn.DNNLinearCombinedClassifier(
