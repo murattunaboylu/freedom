@@ -1,4 +1,5 @@
 import tensorflow as tf
+import dnn_ff as dnn
 
 # Define the format of your input data including unused columns
 CSV_COLUMNS = ['Id', 'Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Mva10', 'Mva200', 'Rsi2', 'Rsi14', 'PercentB',
@@ -56,9 +57,8 @@ def build_estimator(config, embedding_size=8, hidden_units=None):
       fix_global_step_increment_bug=True
     )'''
 
-
-    #DNN Classifier is defined in dnn.py
-    return tf.contrib.learn.DNNClassifier(
+    # DNN Classifier is defined in dnn.py
+    return dnn.DNNClassifier(
         config=config,
         feature_columns=deep_columns,
         hidden_units=[1024, 512, 256],
