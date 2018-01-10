@@ -143,9 +143,9 @@ namespace Freedom.SimulatorServices.Controllers
             //which is obviously not possible in real time trading
             CalculateAction(10, 4);
 
-            var balanced = OverSample(10);
+            //var balanced = OverSample(10);
 
-            var normalized = Normalize(balanced);
+            var normalized = Normalize(DataPoints);
 
             var exportLines = normalized.Select(d => $"{d.Start:M/d/yyyy H:mm},{d.Open},{d.High},{d.Low},{d.Close},{d.Volume},{d.Mva10},{d.Mva200},{d.Rsi2},{d.Rsi14},{d.PercentB},{d.Bandwidth},{d.Action}").ToList();
 
