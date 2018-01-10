@@ -1,11 +1,11 @@
 import pandas as pd
 
-full = pd.read_csv('../input/marketdata.export.20180104131044.csv')
+full = pd.read_csv('../input/marketdata.export.20180110111239.csv')
 
 # Split the data into train and test
 # Rough 70:30 split
-train = full[0:2500]
-test = full[2500:]
+train = full[0:800]
+test = full[800:]
 
 # Save it to disk
 train.to_csv('../input/train.csv', encoding='utf-8')

@@ -39,6 +39,9 @@ from tensorflow.python.ops import partitioned_variables
 from tensorflow.python.ops import variable_scope
 from tensorflow.python.summary import summary
 
+import numpy as np
+from imblearn.over_sampling import SMOTE
+
 # The default learning rate of 0.05 is a historical artifact of the initial
 # implementation, but seems a reasonable choice.
 _LEARNING_RATE = 0.05
@@ -60,6 +63,16 @@ def _get_optimizer(optimizer):
 def _add_hidden_layer_summary(value, tag):
     summary.scalar("%s_fraction_of_zero_values" % tag, nn.zero_fraction(value))
     summary.histogram("%s_activation" % tag, value)
+
+
+def feature_normalize(features):
+    """Normalizes features but we also need to normalize the eval and prediction features
+    However does values won't be normalized properly as we ignore the test dataset
+    Imagine a single record for prediction is passed it, then the normalization wont' do anything
+    """
+    mu = np.mean(features, axis=0)
+    sigma = np.std(features, axis=0)
+    return (features - mu)/sigma
 
 
 def _dnn_model_fn(features, labels, mode, params, config=None):
@@ -112,6 +125,12 @@ def _dnn_model_fn(features, labels, mode, params, config=None):
 
     features = _get_feature_dict(features)
     parent_scope = "dnn"
+
+    # Synthetic minority over-sampling technique
+    # to overcome the lack of B and S signals in the training data
+    if mode == model_fn.ModeKeys.TRAIN:
+        sm = SMOTE(ratio=0.1, k=5, kind='regular', random_state=10)
+        features, labels = sm.fit_sample(features, labels)
 
     partitioner = partitioned_variables.min_max_variable_partitioner(
         max_partitions=num_ps_replicas)
