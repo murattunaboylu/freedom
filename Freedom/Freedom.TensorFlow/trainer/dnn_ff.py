@@ -130,7 +130,8 @@ def _dnn_model_fn(features, labels, mode, params, config=None):
     # to overcome the lack of B and S signals in the training data
     if mode == model_fn.ModeKeys.TRAIN:
         sm = SMOTE(ratio=0.1, k=5, kind='regular', random_state=10)
-        features, labels = sm.fit_sample(features, labels)
+	with sess.as_default():
+        	features, labels = sm.fit_sample(features, labels.eval().ravel())
 
     partitioner = partitioned_variables.min_max_variable_partitioner(
         max_partitions=num_ps_replicas)
