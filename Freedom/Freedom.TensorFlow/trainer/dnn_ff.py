@@ -38,6 +38,7 @@ from tensorflow.python.ops import nn
 from tensorflow.python.ops import partitioned_variables
 from tensorflow.python.ops import variable_scope
 from tensorflow.python.summary import summary
+from tensorflow import get_default_session
 
 import numpy as np
 from imblearn.over_sampling import SMOTE
@@ -130,8 +131,9 @@ def _dnn_model_fn(features, labels, mode, params, config=None):
     # to overcome the lack of B and S signals in the training data
     if mode == model_fn.ModeKeys.TRAIN:
         sm = SMOTE(ratio=0.1, k=5, kind='regular', random_state=10)
-	with sess.as_default():
-        	features, labels = sm.fit_sample(features, labels.eval().ravel())
+        sess = get_default_session()
+        with sess:
+            features, labels = sm.fit_sample(features, labels.eval().ravel())
 
     partitioner = partitioned_variables.min_max_variable_partitioner(
         max_partitions=num_ps_replicas)
