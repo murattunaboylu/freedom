@@ -1,6 +1,7 @@
 ﻿using Freedom.Algorithms;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
@@ -28,17 +29,13 @@ namespace Freedom.SimulatorServices.Controllers
         public SimulationResult Simulate(DateTime start, DateTime end, int interval, StrategyParameters parameters)
         {
             //Read the OHLC from database
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = "ff-marketdata.database.windows.net";
-            builder.UserID = "marketdata";
-            builder.Password = "mar20X/b";
-            builder.InitialCatalog = "marketdata";
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-mac-local"].ConnectionString;
 
             List<OHLC> ohlcList = new List<OHLC>();
 
             try
             {
-                using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     using (SqlCommand command = new SqlCommand("", connection))
@@ -109,7 +106,7 @@ namespace Freedom.SimulatorServices.Controllers
                         DataPoints.Insert(0, ohlc);
 
                         //Check for indicators and make trading decisions
-                        RelativeStrengthIndexStrategy(ohlc, windowEnd, parameters);
+                        RelativeVigorIndexStrategy(ohlc, windowEnd, parameters);
 
                         //Add Bollinger Bands
                         var bb = CalculateBollingerBands(20, 2);
@@ -144,6 +141,56 @@ namespace Freedom.SimulatorServices.Controllers
         public List<double> LowerBand { get; set; } = new List<double>();
 
         public List<Event> Events { get; set; } = new List<Event>();
+
+        public decimal CalculateEnvelopeLowerBand(List<OHLC> dataPoints, int period, double weight)
+        {
+            var closes = dataPoints.Take(period).Select(d => d.Close).ToList();
+            var average = closes.Average();
+            var standardDeviation = closes.StandardDeviation();
+            var lowerBand = average - (decimal)(weight * standardDeviation);
+
+            return lowerBand;
+        }
+
+        private double CalculateSlowStochasticOscillatorsPercentK(List<OHLC> dataPoints, int kPeriod, int slowing)
+        {
+            var percentKs = new List<double>();
+
+            for (int i = 0; i < slowing; i++)
+            {
+                var dataPointsInPeriod = dataPoints.Skip(i).Take(kPeriod).ToList();
+                var lowest = dataPointsInPeriod.Select(d => d.Low).Min();
+                var highest = dataPointsInPeriod.Select(d => d.High).Max();
+                var latestClose = dataPointsInPeriod.First().Close;
+                var percentK = (double)((latestClose - lowest) / (highest - lowest) * 100);
+
+                percentKs.Add(percentK);
+            }
+
+            var slowPercentK = percentKs.Average();
+
+            return slowPercentK;
+
+        }
+
+        private double CalculateSlowStochasticOscillatorsPercentD(List<OHLC> dataPoints, int dPeriod, int kPeriod, int slowing)
+        {
+            var slowPercentKs = new List<double>();
+
+            for (int i = 0; i < dPeriod; i++)
+            {
+                var dataPointsInPeriod = dataPoints.Skip(i).ToList();
+                var slowPercentK = CalculateSlowStochasticOscillatorsPercentK(dataPointsInPeriod, kPeriod, slowing);
+
+
+                slowPercentKs.Add(slowPercentK);
+            }
+
+            var percentD = slowPercentKs.Average();
+
+            return percentD;
+        }
+
 
         private BollingerBandsAlgorithm.Result CalculateBollingerBands(int period, int sigmaWeight)
         {
@@ -236,6 +283,16 @@ namespace Freedom.SimulatorServices.Controllers
             return DataPoints.Take(dataPointCount).Average(p => p.Close);
         }
 
+        private double CalculateRelativeVigorIndex(int dataPointCount)
+        {
+            //rvi = (C-O)/(H-L)
+
+            var dataPoints = DataPoints.Take(dataPointCount).ToList();
+            var rvis = dataPoints.Select(d => (d.Close - d.Open) / (d.High - d.Low + 0.01m));
+            var rvi = (double)(rvis.Average() * 100);
+            return rvi;
+        }
+
         private double CalculateRelativeStrengthIndex(int dataPointCount)
         {
             decimal sumUp = 0;
@@ -322,6 +379,73 @@ namespace Freedom.SimulatorServices.Controllers
 
             }
         }
+
+        private void RelativeVigorIndexStrategy(OHLC ohlc, DateTime date, StrategyParameters parameters)
+        {
+            if (DataPoints.Count < 40)
+                return;
+
+            //Calculate indicators
+            var rvi = CalculateRelativeVigorIndex(22);
+            var rviBase = CalculateRelativeVigorIndex(10);
+            var percentK = CalculateSlowStochasticOscillatorsPercentK(DataPoints, 17, 6);
+            var percentD = CalculateSlowStochasticOscillatorsPercentD(DataPoints, 13, 17, 6);
+            var envelopeLowerBand = CalculateEnvelopeLowerBand(DataPoints, 10, 0.97);
+            
+            //Long Entry
+            //When the RVI is greater than the signal and 
+            //percent K is higher than percent D
+            if (State == TradingState.Initial)
+            {
+                if (rvi > rviBase && percentK > percentD)
+                {
+                    CreateOrder(ohlc, date, "Buy", $"<br/> %b {rvi:N0} <br/> > {rviBase:N0} <br/> and {percentK:N0} <br/> > {percentD:N0}");
+                    State = TradingState.WaitingToSell;
+                }
+            }
+            else if (State == TradingState.WaitingToSell || State == TradingState.MonitoringDownTrend)
+            {
+                //Stop loss when BUY order loses 70 EUR
+                var buyOrder = Orders.Last();
+                //var loss = buyOrder.Price - ohlc.Close;
+                //if (loss > 70)
+                //{
+                //    CreateOrder(ohlc, date, "Sell", $"Stop Loss <br/> at loss {loss:N0}");
+                //    State = TradingState.Initial;
+                //    return;//Otherwise might sell twice
+                //}
+
+                //Exit when it closes over envelope lower band 
+                //after closing under envelope lower band
+                if (State == TradingState.WaitingToSell)
+                {
+                    if (ohlc.Close < envelopeLowerBand)
+                        State = TradingState.MonitoringDownTrend;
+                }
+                else if (State == TradingState.MonitoringDownTrend)
+                {
+                    if (ohlc.Close > envelopeLowerBand)
+                    {
+                        CreateOrder(ohlc, date, "Sell", $"Closes over envelope lower band after closing under");
+                        State = TradingState.Initial;
+                        return;
+                    }
+                }
+
+                //Limit profit
+                //by selling the asset when it brings in 200 EUR
+                var profit = ohlc.Close - buyOrder.Price;
+                var profitLimit = 200;
+                if (ohlc.Close - buyOrder.Price >= profitLimit)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"Profit {profit:N0} exceeded {profitLimit} EUR limit");
+                    State = TradingState.Initial;
+                    return;
+                }
+
+            }
+        }
+
     }
 
 
@@ -332,6 +456,7 @@ namespace Freedom.SimulatorServices.Controllers
         MonitoringUpTrend,
         WaitForUpTrendPriceCorrection,
         WaitingToBuy,
+        WaitingToSell,
         MonitoringDownTrend,
 
     }
