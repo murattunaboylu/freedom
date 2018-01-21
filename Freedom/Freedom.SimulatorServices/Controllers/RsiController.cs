@@ -75,9 +75,10 @@ namespace Freedom.SimulatorServices.Controllers
             //Set the trading state
             State = TradingState.Initial;
             Orders = new List<Order>();
+            Account = new Account() { Euro = 10000 };
 
             //l h o c
-
+            
             //Find the first trade
             //Find all trades within the next 5 minutes
             //If there are any trade
@@ -118,7 +119,7 @@ namespace Freedom.SimulatorServices.Controllers
             }
 
             //Stats after simulation
-            var stats = new Stats(Orders)
+            var stats = new Stats(Orders, Account)
             {
                 Market = DataPoints.First().Close - DataPoints.Last().Close,
                 Target = (end - start).Days * 80 //80 EUR profit per day 
@@ -261,13 +262,26 @@ namespace Freedom.SimulatorServices.Controllers
             var order = new Order()
             {
                 Price = ohlc.Close,
+                Quantity = type == "Buy" ? (double)(Account.Euro/ohlc.Close) : (double)Account.BitCoin,
                 Date = date,
                 Type = type
             };
 
             Orders.Add(order);
 
-            var message = $"{date} {type} 1 BTC at {ohlc.Close}";
+            //Settle the account as if the order is immediately executed
+            if (type == "Buy")
+            {
+                Account.BitCoin = (double)(Account.Euro / ohlc.Close);
+                Account.Euro = 0;  
+            }
+            else
+            {
+                Account.Euro = (decimal)Account.BitCoin * ohlc.Close;
+                Account.BitCoin = 0;
+            }
+
+            var message = $"{date} {type} {order.Quantity} BTC at {order.Price}";
 
             Events.Add(new Event(date, type, "@" + ohlc.Close + " " + description));
 
@@ -277,6 +291,8 @@ namespace Freedom.SimulatorServices.Controllers
         public List<Order> Orders { get; set; }
 
         public List<OHLC> DataPoints = new List<OHLC>();
+
+        public Account Account { get; set; }
 
         private decimal CalculateMovingAverage(int dataPointCount)
         {
@@ -476,7 +492,7 @@ namespace Freedom.SimulatorServices.Controllers
         public double MeanHoldInHours { get; set; }
         public double MinHoldInHours { get; set; }
 
-        public Stats(List<Order> orders)
+        public Stats(List<Order> orders, Account account)
         {
             if (orders.Any())
             {
@@ -518,7 +534,8 @@ namespace Freedom.SimulatorServices.Controllers
 
                 }
 
-                Pnl = tradePairs.Select(p => p.SellOrder.Price - p.BuyOrder.Price).Sum();
+                //Calculate cumulated returns (investing the return as principal)
+                Pnl = account.Euro - 10000; 
 
                 var wins = tradePairs.Where(p => p.SellOrder.Price > p.BuyOrder.Price);
                 var losses = tradePairs.Where(p => p.SellOrder.Price <= p.BuyOrder.Price);
@@ -609,6 +626,7 @@ namespace Freedom.SimulatorServices.Controllers
     public class Order
     {
         public decimal Price { get; set; }
+        public double Quantity { get; set; }
         public DateTime Date { get; set; }
         public string Type { get; set; }
     }
