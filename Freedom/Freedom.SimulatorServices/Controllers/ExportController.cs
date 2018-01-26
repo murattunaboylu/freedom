@@ -218,8 +218,8 @@ namespace Freedom.SimulatorServices.Controllers
             Debug.WriteLine($"Buys: {DataPoints.Count(d => d.Action == "B")} Total: {DataPoints.Where(d => d.Action == "B").Sum(d => d.Close)}");
             Debug.WriteLine($"Sells: {DataPoints.Count(d => d.Action == "S")} Total: {DataPoints.Where(d => d.Action == "S").Sum(d => d.Close)}");
 
-            var depth = 0;
-            var maxDepth = 0;
+            var held = 0;
+            var maxHeld = 0;
             var action = "B";
             foreach (var dataPoint in DataPoints)
             {
@@ -228,18 +228,18 @@ namespace Freedom.SimulatorServices.Controllers
 
                 if (dataPoint.Action == action)
                 {
-                    depth++;
+                    held++;
                 }
                 else
                 {
-                    depth = 0;
+                    held = 0;
                     action = dataPoint.Action;
                 }
 
-                maxDepth = Math.Max(depth, maxDepth);
+                maxHeld = Math.Max(held, maxHeld);
             }
 
-            Debug.WriteLine($"Longest run {maxDepth}");
+            Debug.WriteLine($"Max Held {maxHeld}");
         }
 
         private List<OhlcIndicators> OverSample(int factor)

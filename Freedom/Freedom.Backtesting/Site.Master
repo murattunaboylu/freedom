@@ -101,8 +101,11 @@
 			            }
 
 			            //Display stats
-			            $("#Stats").append("Actual (" + result.Stats.Pnl + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")<br/>");
+			            $("#Stats").append("Net RAR (" + result.Stats.NetRiskAdjustedReturn + ") vs Market RAR (" + result.Stats.MarketRiskAdjustedReturn + ")<br/>");
+			            $("#Stats").append("Actual (" + result.Stats.NetProfit + ") vs Market (" + result.Stats.Market + ") vs Target (" + result.Stats.Target + ")<br/>");
 
+			            $("#Stats").append("Net Profit %: " + result.Stats.NetProfitPercentage + "<br/>");
+			            $("#Stats").append("Exposure %: " + result.Stats.Exposure + "<br/>");
 			            $("#Stats").append("Win ratio : " + result.Stats.WinRatio + "<br/>");
 			            $("#Stats").append("# t-pairs : " + result.Stats.TradePairCount + "<br/>");
 			            $("#Stats").append("Max win   : " + result.Stats.MaxWin + "<br/>");
