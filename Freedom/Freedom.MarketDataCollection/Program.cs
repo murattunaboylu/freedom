@@ -129,6 +129,9 @@ namespace Freedom.MarketDataCollection
                                 command.ExecuteNonQuery();
                             }
                         }
+
+                        //Update OHLC
+                        UpdateOHLC();
                     }
                 }
             }
@@ -137,5 +140,47 @@ namespace Freedom.MarketDataCollection
                 Console.WriteLine(e.Message);
             }
         }
+
+        static void UpdateOHLC()
+        {
+            //If last OHLC date is 1 min older than the latest trade
+            //Then fill all the missing OHLC data by reading trades from database and grouping as OHLC
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (SqlCommand command =
+                    new SqlCommand("SELECT TOP 1 [Start] FROM OHLC ORDER BY [Start] DESC", connection))
+                {
+                    var latestOhlcStart = DateTime.Parse(command.ExecuteScalar().ToString());
+
+                    if (DateTime.Now.AddMinutes(-2) > latestOhlcStart)
+                    {
+
+                        using (SqlCommand getTradesCommand = new SqlCommand("", connection))
+                        {
+                            getTradesCommand.CommandText =
+                            "SELECT Exchange, Market, TradeId, Price, Quantity, Total, [Time], [Type] FROM Trades " +
+                            "WHERE [Time] > @LatestOhlcStart";
+
+                            getTradesCommand.Parameters.Add(new SqlParameter("LatestOhlcStart", System.Data.SqlDbType.DateTime) {Value = latestOhlcStart});
+
+                            using (SqlDataReader reader = getTradesCommand.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    var tradeId = reader.GetString(2);
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+            }
+        }
+
     }
 }
