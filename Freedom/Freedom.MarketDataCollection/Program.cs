@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Data.SqlClient;
+using Freedom.DataAccessLayer;
 
 namespace Freedom.MarketDataCollection
 {
@@ -145,39 +146,21 @@ namespace Freedom.MarketDataCollection
         {
             //If last OHLC date is 1 min older than the latest trade
             //Then fill all the missing OHLC data by reading trades from database and grouping as OHLC
-            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
+            FreedomContextFactory factory = new FreedomContextFactory();
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            var context = factory.Create();
+
+            var latestOhlc = context.Set<OHLC>().OrderByDescending(x => x.Start).FirstOrDefault();
+
+            if (latestOhlc != null)
             {
-                connection.Open();
-
-                using (SqlCommand command =
-                    new SqlCommand("SELECT TOP 1 [Start] FROM OHLC ORDER BY [Start] DESC", connection))
+                if (DateTime.Now.AddMinutes(-2) > latestOhlc.Start)
                 {
-                    var latestOhlcStart = DateTime.Parse(command.ExecuteScalar().ToString());
 
-                    if (DateTime.Now.AddMinutes(-2) > latestOhlcStart)
-                    {
+                    //Get trades newer than OHLC and convert them to 1m-OHLC
+                    var trades = context.Set<DataAccessLayer.Trade>().Where(x => x.Time > latestOhlc.Start);
 
-                        using (SqlCommand getTradesCommand = new SqlCommand("", connection))
-                        {
-                            getTradesCommand.CommandText =
-                            "SELECT Exchange, Market, TradeId, Price, Quantity, Total, [Time], [Type] FROM Trades " +
-                            "WHERE [Time] > @LatestOhlcStart";
-
-                            getTradesCommand.Parameters.Add(new SqlParameter("LatestOhlcStart", System.Data.SqlDbType.DateTime) {Value = latestOhlcStart});
-
-                            using (SqlDataReader reader = getTradesCommand.ExecuteReader())
-                            {
-                                while (reader.Read())
-                                {
-                                    var tradeId = reader.GetString(2);
-                                }
-                            }
-                        }
-
-
-                    }
+                    
                 }
             }
         }
