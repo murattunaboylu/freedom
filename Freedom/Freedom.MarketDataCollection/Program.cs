@@ -165,12 +165,12 @@ namespace Freedom.MarketDataCollection
 
                     var oneMinuteOhlcs = trades.ToList().GroupBy(x => x.Time.Minute());
 
-                    //Save max 1 hour trades 60 minutes
+                    //Save max 4 hours trades 240 minutes
                     var minCount = 0;
 
                     foreach (var oneMinuteOhlc in oneMinuteOhlcs)
                     {
-                        if (minCount >= 60)
+                        if (minCount >= 240)
                             break;
 
                         if (oneMinuteOhlc.Any())

@@ -1,7 +1,7 @@
 ﻿{
   "$schema": "http://schemastore.org/schemas/json/webjob-publish-settings.json",
   "webJobName": "Freedom-MarketDataCollection",
-  "startTime": "2018-02-12T21:00:00+01:00",
+  "startTime": "2018-02-12T22:00:00+01:00",
   "endTime": "2028-02-12T21:00:00+01:00",
   "jobRecurrenceFrequency": "Minute",
   "interval": 5,
