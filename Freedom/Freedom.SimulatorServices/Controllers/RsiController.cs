@@ -109,7 +109,7 @@ namespace Freedom.SimulatorServices.Controllers
                         DataPoints.Insert(0, ohlc);
 
                         //Check for indicators and make trading decisions
-                        RelativeStrengthIndexStrategy(ohlc, windowEnd, parameters);
+                        BollingerBandStrategy(ohlc, windowEnd, parameters);
 
                         //Add Bollinger Bands
                         var bb = CalculateBollingerBands(20, 2);
@@ -322,6 +322,56 @@ namespace Freedom.SimulatorServices.Controllers
 
             }
         }
+
+        private void BollingerBandStrategy(OHLC ohlc, DateTime date, StrategyParameters parameters)
+        {
+            if (DataPoints.Count < 200)
+                return;
+
+            var rsiPeriod = parameters.RsiPeriod;
+            var rsiThreshold = parameters.RsiThreshold;
+            var stopLossRatio = parameters.StopLossRatio;
+
+            //Calculate indicators
+            var direction = CalculateMovingAverage(200);
+            var sellSignal = CalculateMovingAverage(5);
+            var rsi = CalculateRelativeStrengthIndex(rsiPeriod);
+            var bb = CalculateBollingerBands(20, 2);
+            var percentB = bb.PercentB;
+            var bandwidth = bb.Bandwidth;
+
+            //Long Entry
+            //When the price candle closes or is already above 200 day MA and RSI closes below 5 buy
+            //Sell when closes above 5-period moving average
+            if (State == TradingState.Initial)
+            {
+                if (ohlc.High > direction && percentB > 100)
+                {
+                    CreateOrder(ohlc, date, "Buy", $"<br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
+                    State = TradingState.MonitoringDownTrend;
+                }
+            }
+            else if (State == TradingState.MonitoringDownTrend || State == TradingState.WaitingToSell)
+            {
+                //Stop loss when BUY order loses more than 2% of its value
+                var buyOrder = Orders.Last();
+                if ((double)((buyOrder.Price - ohlc.Close) / buyOrder.Price) > stopLossRatio)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"Stop Loss <br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
+                    State = TradingState.Initial;
+                    return;//Otherwise might sell twice
+                }
+              
+
+                //Limit profit on downward swing
+                if (percentB < 0)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"%b hit over 100 <br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
+                    State = TradingState.Initial;
+                    return;
+                }
+            }
+        }
     }
 
 
@@ -333,7 +383,7 @@ namespace Freedom.SimulatorServices.Controllers
         WaitForUpTrendPriceCorrection,
         WaitingToBuy,
         MonitoringDownTrend,
-
+        WaitingToSell,
     }
 
     public class Stats
