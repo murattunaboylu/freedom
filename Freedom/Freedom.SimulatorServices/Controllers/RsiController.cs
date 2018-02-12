@@ -79,7 +79,7 @@ namespace Freedom.SimulatorServices.Controllers
             Account = new Account() { Euro = 10000 };
 
             //l h o c
-            
+
             //Find the first trade
             //Find all trades within the next 5 minutes
             //If there are any trade
@@ -126,7 +126,7 @@ namespace Freedom.SimulatorServices.Controllers
                 MarketRiskAdjustedReturn = (double)((DataPoints.First().Close - DataPoints.Last().Close) / DataPoints.Last().Close) * 100,
                 Target = (end - start).Days * 80, //80 EUR profit per day
             };
-            
+
             return new SimulationResult()
             {
                 Dates = DataPoints.OrderBy(dp => dp.Start).Select(dp => dp.End).ToList(),
@@ -264,7 +264,7 @@ namespace Freedom.SimulatorServices.Controllers
             var order = new Order()
             {
                 Price = ohlc.Close,
-                Quantity = type == "Buy" ? (double)(Account.Euro/ohlc.Close) : (double)Account.BitCoin,
+                Quantity = type == "Buy" ? (double)(Account.Euro / ohlc.Close) : (double)Account.BitCoin,
                 Date = date,
                 Type = type
             };
@@ -275,7 +275,7 @@ namespace Freedom.SimulatorServices.Controllers
             if (type == "Buy")
             {
                 Account.BitCoin = (double)(Account.Euro / ohlc.Close);
-                Account.Euro = 0;  
+                Account.Euro = 0;
             }
             else
             {
@@ -398,6 +398,57 @@ namespace Freedom.SimulatorServices.Controllers
             }
         }
 
+        private void BollingerBandStrategy(OHLC ohlc, DateTime date, StrategyParameters parameters)
+        {
+            if (DataPoints.Count < 200)
+                return;
+
+            var rsiPeriod = parameters.RsiPeriod;
+            var rsiThreshold = parameters.RsiThreshold;
+            var stopLossRatio = parameters.StopLossRatio;
+
+            //Calculate indicators
+            var direction = CalculateMovingAverage(200);
+            var sellSignal = CalculateMovingAverage(5);
+            var rsi = CalculateRelativeStrengthIndex(rsiPeriod);
+            var bb = CalculateBollingerBands(20, 2);
+            var percentB = bb.PercentB;
+            var bandwidth = bb.Bandwidth;
+
+            //Long Entry
+            //When the price candle closes or is already above 200 day MA and RSI closes below 5 buy
+            //Sell when closes above 5-period moving average
+            if (State == TradingState.Initial)
+            {
+                if (ohlc.High > direction && percentB > 100)
+                {
+                    CreateOrder(ohlc, date, "Buy", $"<br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
+                    State = TradingState.MonitoringDownTrend;
+                }
+            }
+            else if (State == TradingState.MonitoringDownTrend || State == TradingState.WaitingToSell)
+            {
+                //Stop loss when BUY order loses more than 2% of its value
+                var buyOrder = Orders.Last();
+                if ((double)((buyOrder.Price - ohlc.Close) / buyOrder.Price) > stopLossRatio)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"Stop Loss <br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
+                    State = TradingState.Initial;
+                    return;//Otherwise might sell twice
+                }
+
+
+                //Limit profit on downward swing
+                if (percentB < 0)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"%b hit over 100 <br/> %b {percentB:N0} <br/> bandwidth {bandwidth:N0} <br/> upper {bb.UpperBand:N0} <br/> lower {bb.LowerBand:N0}");
+                    State = TradingState.Initial;
+                    return;
+                }
+            }
+        }
+
+
         private void RelativeVigorIndexStrategy(OHLC ohlc, DateTime date, StrategyParameters parameters)
         {
             if (DataPoints.Count < 40)
@@ -409,7 +460,7 @@ namespace Freedom.SimulatorServices.Controllers
             var percentK = CalculateSlowStochasticOscillatorsPercentK(DataPoints, 17, 6);
             var percentD = CalculateSlowStochasticOscillatorsPercentD(DataPoints, 13, 17, 6);
             var envelopeLowerBand = CalculateEnvelopeLowerBand(DataPoints, 10, 0.97);
-            
+
             //Long Entry
             //When the RVI is greater than the signal and 
             //percent K is higher than percent D
@@ -485,7 +536,7 @@ namespace Freedom.SimulatorServices.Controllers
         public double NetProfitPercentage { get; set; }
         public double Exposure { get; set; }
         public double NetRiskAdjustedReturn { get; set; }
-        public double MarketRiskAdjustedReturn  { get; set; }
+        public double MarketRiskAdjustedReturn { get; set; }
         public decimal Market { get; set; }
         public decimal Target { get; set; }
         public double WinRatio { get; set; }
@@ -513,7 +564,7 @@ namespace Freedom.SimulatorServices.Controllers
                     lastBuyPrice = orders.Last().Price;
                     orders.Remove(orders.Last());
                 }
-               
+
 
                 //Sense-check
                 if (orders.Count % 2 != 0)
@@ -548,11 +599,11 @@ namespace Freedom.SimulatorServices.Controllers
 
                 //Calculate cumulated returns (investing the return as principal)
                 //If last order is Buy then sell it back from the same price - no profit on the last buy
-                NetProfit = (account.Euro  == 0 ? (decimal)account.BitCoin * lastBuyPrice : account.Euro) - 10000;
+                NetProfit = (account.Euro == 0 ? (decimal)account.BitCoin * lastBuyPrice : account.Euro) - 10000;
 
                 //Net profit %
                 NetProfitPercentage = (double)(NetProfit / 10000) * 100;
-                
+
                 var wins = tradePairs.Where(p => p.SellOrder.Price > p.BuyOrder.Price);
                 var losses = tradePairs.Where(p => p.SellOrder.Price <= p.BuyOrder.Price);
                 WinRatio = wins.Count() / (double)tradePairs.Count() * 100;
