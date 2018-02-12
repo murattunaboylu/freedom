@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System.IO;
 using System.Data.SqlClient;
+using System.Threading;
+using Freedom.DataAccessLayer;
 
 namespace Freedom.MarketDataCollection
 {
@@ -42,40 +43,17 @@ namespace Freedom.MarketDataCollection
         {
             List<Trade> trades = new List<Trade>();
 
-            if (!Trades.Any())
+            HttpResponseMessage response = await client.GetAsync(path);
+            if (response.IsSuccessStatusCode)
             {
-                HttpResponseMessage response = await client.GetAsync(path);
-                if (response.IsSuccessStatusCode)
-                {
-                    var tradesJson = await response.Content.ReadAsStringAsync();
-                    trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson);
+                var tradesJson = await response.Content.ReadAsStringAsync();
+                trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson);
 
-                    trades.Reverse();
-                }
-            }
-            else
-            {
-                var url = path + "?since=" + (Trades.Last().Id + 1);
-                Console.WriteLine(url);
-
-                HttpResponseMessage response = await client.GetAsync(url);
-                if (response.IsSuccessStatusCode)
-                {
-                    var tradesJson = await response.Content.ReadAsStringAsync();
-                    trades = JsonConvert.DeserializeObject<List<Trade>>(tradesJson, new JavaScriptDateTimeConverter());
-
-                    if (trades.Any())
-                    {
-                        trades.Reverse();
-                    }
-                }
+                trades.Reverse();
             }
 
             return trades;
         }
-
-        private static readonly List<Trade> Trades = new List<Trade>();
-
 
         static async Task RunAsync()
         {
@@ -85,90 +63,149 @@ namespace Freedom.MarketDataCollection
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            if (!Directory.Exists("Data"))
-                Directory.CreateDirectory("Data");
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
 
-            //Write the trades into a database
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = "ff-marketdata.database.windows.net";
-            builder.UserID = "marketdata";
-            builder.Password = "mar20X/b";
-            builder.InitialCatalog = "marketdata";
-
-
-            using (FileStream tradesFile = File.OpenWrite("Data\\trades.csv"))
+            try
             {
-                using (StreamWriter writer = new StreamWriter(tradesFile))
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    try
+                    connection.Open();
+
+                    var tradeId = 0;
+
+                    //Get the last trade id
+                    using (SqlCommand command = new SqlCommand("SELECT TOP 1 TradeId FROM Trades ORDER BY TradeId DESC", connection))
                     {
-                        using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+                        command.CommandType = System.Data.CommandType.Text;
+
+                        tradeId = int.Parse(command.ExecuteScalar().ToString());
+                        tradeId++; //Increment it by 1 as CEX API uses tradeId inclusively in Since statement 
+                    }
+
+                    //Write the trades into a database
+                    using (SqlCommand command = new SqlCommand("", connection))
+                    {
+                        command.CommandType = System.Data.CommandType.Text;
+                        command.CommandText =
+                            "INSERT INTO dbo.Trades (Exchange, Market, TradeId, Price, Quantity, Total, [Time], [Type]) " +
+                            "VALUES(@Exchange, @Market, @TradeId, @Price, @Quantity, @Total, @Time, @Type)";
+
+                        command.Parameters.Add(new SqlParameter("Exchange", ""));
+                        command.Parameters.Add(new SqlParameter("Market", ""));
+                        command.Parameters.Add(new SqlParameter("TradeId", ""));
+                        command.Parameters.Add(new SqlParameter("Price", System.Data.SqlDbType.Money));
+                        command.Parameters.Add(new SqlParameter("Quantity", System.Data.SqlDbType.Decimal));
+                        command.Parameters.Add(new SqlParameter("Total", System.Data.SqlDbType.Decimal));
+                        command.Parameters.Add(new SqlParameter("Time", System.Data.SqlDbType.DateTime));
+                        command.Parameters.Add(new SqlParameter("Type", ""));
+
+                        command.Parameters["Quantity"].Precision = 18;
+                        command.Parameters["Quantity"].Scale = 8;
+
+                        command.Parameters["Total"].Precision = 18;
+                        command.Parameters["Total"].Scale = 8;
+
+
+                        var trades = await GetTradeAsync("trade_history/BTC/EUR/?since=" + tradeId);
+
+                        if (trades.Any())
                         {
-                            connection.Open();
-                            using (SqlCommand command = new SqlCommand("", connection))
+                            Console.WriteLine(trades.Count + " new trades");
+
+                            //Save the trades to a file
+                            foreach (var trade in trades)
                             {
-                                command.CommandType = System.Data.CommandType.Text;
-                                command.CommandText = "INSERT INTO dbo.Trades (Exchange, Market, TradeId, Price, Quantity, Total, [Time], [Type]) " +
-                                    "VALUES(@Exchange, @Market, @TradeId, @Price, @Quantity, @Total, @Time, @Type)";
+                                Console.WriteLine(trade);
+                                //var tradeJson = JsonConvert.SerializeObject(trade);
+                                //Console.WriteLine(tradeJson);
 
-                                command.Parameters.Add(new SqlParameter("Exchange", ""));
-                                command.Parameters.Add(new SqlParameter("Market", ""));
-                                command.Parameters.Add(new SqlParameter("TradeId", ""));
-                                command.Parameters.Add(new SqlParameter("Price", System.Data.SqlDbType.Money));
-                                command.Parameters.Add(new SqlParameter("Quantity", System.Data.SqlDbType.Decimal));
-                                command.Parameters.Add(new SqlParameter("Total", System.Data.SqlDbType.Decimal));
-                                command.Parameters.Add(new SqlParameter("Time", System.Data.SqlDbType.DateTime));
-                                command.Parameters.Add(new SqlParameter("Type", ""));
+                                command.Parameters["Exchange"].Value = "CEX.IO";
+                                command.Parameters["Market"].Value = "BTC/EUR";
+                                command.Parameters["TradeId"].Value = trade.Id;
+                                command.Parameters["Price"].Value = trade.Price;
+                                command.Parameters["Quantity"].Value = trade.Amount;
+                                command.Parameters["Total"].Value = trade.Price * trade.Amount;
+                                command.Parameters["Time"].Value = trade.Date;
+                                command.Parameters["Type"].Value = trade.Type;
 
-                                command.Parameters["Quantity"].Precision = 18;
-                                command.Parameters["Quantity"].Scale = 8;
-
-                                command.Parameters["Total"].Precision = 18;
-                                command.Parameters["Total"].Scale = 8;
-
-                                while (true)
-                                {
-                                    var trades = await GetTradeAsync("trade_history/BTC/EUR/");
-
-                                    if (trades.Any())
-                                    {
-                                        Console.WriteLine(trades.Count + " new trades");
-
-                                        Trades.AddRange(trades);
-
-                                        //Save the trades to a file
-                                        foreach (var trade in trades)
-                                        {
-                                            Console.WriteLine(trade);
-                                            var tradeJson = JsonConvert.SerializeObject(trade);
-                                            writer.WriteLine(tradeJson);
-
-                                            command.Parameters["Exchange"].Value = "CEX.IO";
-                                            command.Parameters["Market"].Value = "BTC/EUR";
-                                            command.Parameters["TradeId"].Value = trade.Id;
-                                            command.Parameters["Price"].Value = trade.Price;
-                                            command.Parameters["Quantity"].Value = trade.Amount;
-                                            command.Parameters["Total"].Value = trade.Price * trade.Amount;
-                                            command.Parameters["Time"].Value = trade.Date;
-                                            command.Parameters["Type"].Value = trade.Type;
-
-                                            command.ExecuteNonQuery();
-                                        }
-                                    }
-
-                                    System.Threading.Thread.Sleep(120*1000);
-                                }
+                                command.ExecuteNonQuery();
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.Message);
+
+                        //Update OHLC
+                        UpdateOHLC();
                     }
                 }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
 
-            Console.ReadLine();
+        static void UpdateOHLC()
+        {
+            //If last OHLC date is 1 min older than the latest trade
+            //Then fill all the missing OHLC data by reading trades from database and grouping as OHLC
+            FreedomContextFactory factory = new FreedomContextFactory();
+
+            var context = factory.Create();
+
+            var latestOhlc = context.Set<OHLC>().OrderByDescending(x => x.Start).FirstOrDefault();
+
+            if (latestOhlc != null)
+            {
+                if (DateTime.Now.AddMinutes(-2) > latestOhlc.Start)
+                {
+                    //Get trades newer than OHLC and convert them to 1m-OHLC
+                    var trades = context.Set<DataAccessLayer.Trade>().Where(x => x.Time > latestOhlc.Start).OrderBy(x=>x.Time);
+
+                    var oneMinuteOhlcs = trades.ToList().GroupBy(x => x.Time.Minute());
+
+                    //Save max 1 hour trades 60 minutes
+                    var minCount = 0;
+
+                    foreach (var oneMinuteOhlc in oneMinuteOhlcs)
+                    {
+                        if (minCount >= 60)
+                            break;
+
+                        if (oneMinuteOhlc.Any())
+                        {
+                            var ohlc = new OHLC()
+                            {
+                                Low = oneMinuteOhlc.Select(t => t.Price).Min(),
+                                High = oneMinuteOhlc.Select(t => t.Price).Max(),
+                                Open = oneMinuteOhlc.First().Price,
+                                Close = oneMinuteOhlc.Last().Price,
+                                Volume = oneMinuteOhlc.Sum(t => t.Quantity),
+                                Start = oneMinuteOhlc.First().Time.Minute(),
+                                End = oneMinuteOhlc.First().Time.Minute().AddSeconds(59),
+                                Market = "BTC/EUR",
+                                Exchange = "CEX.IO"
+                            };
+
+                            context.Set<OHLC>().Add(ohlc);
+
+                            minCount++;
+                        }
+                    }
+
+                    //Save the OHLC-1m
+                    context.SaveChanges();
+                }
+            }
+        }
+
+        
+
+    }
+
+    public static class DateTimeExtension
+    {
+        public static DateTime Minute(this DateTime dateTime)
+        {
+            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, 0);
         }
     }
 }

@@ -7,10 +7,18 @@ header = reader.readline()
 line = reader.readline()
 i = 0
 actions = []
+lastAction = 'S'
 while line:  # and i < 900:
     prob = line[20:].strip()
     prob = prob[1:-1].split(', ')
-    action = 'B' if max(prob) == prob[0] else 'S' if max(prob) == prob[2] else 'H'
+    if lastAction == 'S':
+        action = 'B' if max(prob) == prob[0] else 'H'
+    else:
+        action = 'S' if max(prob) == prob[2] else 'H'
+
+    if action == 'B' or action == 'S':
+        lastAction = action
+
     actions.append(action)
 
     writer.write(action + '\n')
