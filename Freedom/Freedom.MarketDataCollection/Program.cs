@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Data.SqlClient;
+using System.Threading;
 using Freedom.DataAccessLayer;
 
 namespace Freedom.MarketDataCollection
@@ -156,14 +157,55 @@ namespace Freedom.MarketDataCollection
             {
                 if (DateTime.Now.AddMinutes(-2) > latestOhlc.Start)
                 {
-
                     //Get trades newer than OHLC and convert them to 1m-OHLC
-                    var trades = context.Set<DataAccessLayer.Trade>().Where(x => x.Time > latestOhlc.Start);
+                    var trades = context.Set<DataAccessLayer.Trade>().Where(x => x.Time > latestOhlc.Start).OrderBy(x=>x.Time);
 
-                    
+                    var oneMinuteOhlcs = trades.ToList().GroupBy(x => x.Time.Minute());
+
+                    //Save max 1 hour trades 60 minutes
+                    var minCount = 0;
+
+                    foreach (var oneMinuteOhlc in oneMinuteOhlcs)
+                    {
+                        if (minCount >= 60)
+                            break;
+
+                        if (oneMinuteOhlc.Any())
+                        {
+                            var ohlc = new OHLC()
+                            {
+                                Low = oneMinuteOhlc.Select(t => t.Price).Min(),
+                                High = oneMinuteOhlc.Select(t => t.Price).Max(),
+                                Open = oneMinuteOhlc.First().Price,
+                                Close = oneMinuteOhlc.Last().Price,
+                                Volume = oneMinuteOhlc.Sum(t => t.Quantity),
+                                Start = oneMinuteOhlc.First().Time.Minute(),
+                                End = oneMinuteOhlc.First().Time.Minute().AddSeconds(59),
+                                Market = "BTC/EUR",
+                                Exchange = "CEX.IO"
+                            };
+
+                            context.Set<OHLC>().Add(ohlc);
+
+                            minCount++;
+                        }
+                    }
+
+                    //Save the OHLC-1m
+                    context.SaveChanges();
                 }
             }
         }
 
+        
+
+    }
+
+    public static class DateTimeExtension
+    {
+        public static DateTime Minute(this DateTime dateTime)
+        {
+            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, 0);
+        }
     }
 }
