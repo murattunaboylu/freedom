@@ -16,5 +16,10 @@ namespace Freedom.DataAccessLayer
 
             return new FreedomContext(connectionString);
         }
+
+        public FreedomContext Create(string connectionString)
+        {
+            return new FreedomContext(connectionString);
+        }
     }
 }

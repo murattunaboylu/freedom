@@ -21,6 +21,9 @@ namespace Freedom.MarketDataCollection
             //Console.ReadLine();
             RunAsync().Wait();
 
+            //Sleep a sec not to get throttled 
+            Thread.Sleep(1 * 1000);
+
             //https://cex.io/api/ohlcv/hd/20160228/BTC/USD
 
             //Start the by calling https://cex.io/api/trade_history/BTC/EUR/
@@ -63,7 +66,7 @@ namespace Freedom.MarketDataCollection
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-azure"].ConnectionString;
 
             try
             {
@@ -149,7 +152,7 @@ namespace Freedom.MarketDataCollection
             //Then fill all the missing OHLC data by reading trades from database and grouping as OHLC
             FreedomContextFactory factory = new FreedomContextFactory();
 
-            var context = factory.Create();
+            var context = factory.Create(ConfigurationManager.ConnectionStrings["marketdata-azure"].ConnectionString);
 
             var latestOhlc = context.Set<OHLC>().OrderByDescending(x => x.Start).FirstOrDefault();
 
@@ -196,8 +199,6 @@ namespace Freedom.MarketDataCollection
                 }
             }
         }
-
-        
 
     }
 

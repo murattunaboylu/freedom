@@ -1,9 +1,9 @@
 ﻿{
   "$schema": "http://schemastore.org/schemas/json/webjob-publish-settings.json",
-  "webJobName": "MarketDataCollection",
-  "startTime": null,
-  "endTime": null,
-  "jobRecurrenceFrequency": null,
-  "interval": null,
-  "runMode": "Continuous"
+  "webJobName": "Freedom-MarketDataCollection",
+  "startTime": "2018-02-12T21:00:00+01:00",
+  "endTime": "2028-02-12T21:00:00+01:00",
+  "jobRecurrenceFrequency": "Minute",
+  "interval": 5,
+  "runMode": "Scheduled"
 }
