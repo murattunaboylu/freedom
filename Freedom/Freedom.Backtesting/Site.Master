@@ -140,7 +140,7 @@
 				dataSet.categoryField = "date";
 
 				var dataSet2 = new AmCharts.DataSet();
-				dataSet2.title = "Bollinger Upper Band";
+				dataSet2.title = "Donchian Upper Band";
 				dataSet2.color = "#0c8cd6";
 				dataSet2.fieldMappings = [{
 				    fromField: "value",
@@ -153,7 +153,7 @@
 				dataSet2.categoryField = "date";
 
 				var dataSet3 = new AmCharts.DataSet();
-				dataSet3.title = "Bollinger Lower Band";
+				dataSet3.title = "Donchian Lower Band";
 				dataSet3.color = "#0c8cd6";
 				dataSet3.fieldMappings = [{
 				    fromField: "value",

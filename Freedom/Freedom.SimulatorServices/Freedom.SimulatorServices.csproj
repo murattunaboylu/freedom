@@ -119,7 +119,6 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="OHLC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +137,10 @@
     <ProjectReference Include="..\Freedom.Algorithms\Freedom.Algorithms.csproj">
       <Project>{B7E36264-41F5-434F-940B-07979C2F271E}</Project>
       <Name>Freedom.Algorithms</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Freedom.DataAccessLayer\Freedom.DataAccessLayer.csproj">
+      <Project>{AF7316B6-376D-449A-816C-550DC56FFC96}</Project>
+      <Name>Freedom.DataAccessLayer</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

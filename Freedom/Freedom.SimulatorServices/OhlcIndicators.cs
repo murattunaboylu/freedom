@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using Freedom.DataAccessLayer;
 
 namespace Freedom.SimulatorServices
 {
     public class OhlcIndicators : OHLC
     {
-        public OhlcIndicators(decimal open, decimal high, decimal low, decimal close) : base(open, high, low, close)
+        public OhlcIndicators(decimal open, decimal high, decimal low, decimal close) 
         {
+            Open = open;
+            High = high;
+            Low = low;
+            Close = close;
         }
 
         public decimal Mva10 { get; set; }

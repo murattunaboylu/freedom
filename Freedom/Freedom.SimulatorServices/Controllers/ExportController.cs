@@ -1,4 +1,5 @@
 ﻿using Freedom.Algorithms;
+using Freedom.DataAccessLayer;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -77,7 +78,7 @@ namespace Freedom.SimulatorServices.Controllers
                                 ohlc.Close = reader.GetDecimal(4);
                                 ohlc.Start = reader.GetDateTime(5);
                                 var volume = reader.GetDecimal(6);
-                                ohlc.Volume = (double)(volume * 1000);
+                                ohlc.Volume = (volume * 1000);
 
                                 ohlcList.Add(ohlc);
                             }

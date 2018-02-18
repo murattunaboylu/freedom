@@ -87,6 +87,9 @@
     <None Include="Data\trades.20171113.csv" />
     <None Include="packages.config" />
     <None Include="Properties\PublishProfiles\ff-marketdatareaders - Web Deploy.pubxml" />
+    <Content Include="settings.job">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="Properties\webjob-publish-settings.json" />
   </ItemGroup>
   <ItemGroup>

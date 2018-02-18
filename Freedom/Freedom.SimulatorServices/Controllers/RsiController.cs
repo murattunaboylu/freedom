@@ -1,4 +1,5 @@
 ﻿using Freedom.Algorithms;
+using Freedom.DataAccessLayer;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace Freedom.SimulatorServices.Controllers
         public SimulationResult Simulate(DateTime start, DateTime end, int interval, StrategyParameters parameters)
         {
             //Read the OHLC from database
-            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-local"].ConnectionString;
+            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-azure"].ConnectionString;
 
             List<OHLC> ohlcList = new List<OHLC>();
 
@@ -59,7 +60,7 @@ namespace Freedom.SimulatorServices.Controllers
                                 ohlc.Close = reader.GetDecimal(4);
                                 ohlc.Start = reader.GetDateTime(5);
                                 var volume = reader.GetDecimal(6);
-                                ohlc.Volume = (double)(volume * 1000);
+                                ohlc.Volume = (volume * 1000);
 
                                 ohlcList.Add(ohlc);
                             }
@@ -103,18 +104,18 @@ namespace Freedom.SimulatorServices.Controllers
                         var close = ohlcInTheSameWindow.Last().Close;
                         var volume = ohlcInTheSameWindow.Sum(t => t.Volume);
 
-                        var ohlc = new OHLC(open, high, low, close) { Volume = volume, Start = windowStart, End = windowEnd };
+                        var ohlc = new OHLC { Open = open, High = high, Low = low, Close = close, Volume = volume, Start = windowStart, End = windowEnd };
 
                         DataPoints.Insert(0, ohlc);
 
                         //Check for indicators and make trading decisions
-                        RelativeVigorIndexStrategy(ohlc, windowEnd, parameters);
+                        DonchienBreakoutStrategy(ohlc, windowEnd, parameters);
 
-                        //Add Bollinger Bands
-                        var bb = CalculateBollingerBands(20, 2);
+                        //Add Donchian Channels
+                        var dca = CalculateDonchianChannel(55);
 
-                        UpperBand.Add(bb.UpperBand);
-                        LowerBand.Add(bb.LowerBand);
+                        UpperBand.Add((double)dca.UpperBand);
+                        LowerBand.Add((double)dca.LowerBand);
                     }
                 }
             }
@@ -194,6 +195,14 @@ namespace Freedom.SimulatorServices.Controllers
             return percentD;
         }
 
+
+        private DonchianChannelAlgorithm.Result CalculateDonchianChannel(int period)
+        {
+            var dca = new DonchianChannelAlgorithm();
+            var result = dca.Calculate(DataPoints, period);
+
+            return result;
+        }
 
         private BollingerBandsAlgorithm.Result CalculateBollingerBands(int period, int sigmaWeight)
         {
@@ -448,6 +457,45 @@ namespace Freedom.SimulatorServices.Controllers
             }
         }
 
+        private void DonchienBreakoutStrategy(OHLC ohlc, DateTime date, StrategyParameters parameters)
+        {
+            if (DataPoints.Count < 55)
+                return;
+
+            //Calculate indicators
+            var dca = CalculateDonchianChannel(55);
+
+            //Long Entry
+            //When closes at DC upper limit
+            if (State == TradingState.Initial)
+            {
+                if (ohlc.Close >= dca.UpperBand)
+                {
+                    CreateOrder(ohlc, date, "Buy", $"<br/> Close {ohlc.Close:N0} > Upper {dca.UpperBand:N0}");
+                    State = TradingState.WaitingToSell;
+                }
+            }
+            else if (State == TradingState.WaitingToSell)
+            {
+                //Stop loss when BUY order loses 70 EUR
+                var buyOrder = Orders.Last();
+                var loss = buyOrder.Price - ohlc.Close;
+                if (loss > 70)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"Stop Loss <br/> at loss {loss:N0}");
+                    State = TradingState.Initial;
+                    return;//Otherwise might sell twice
+                }
+
+                //Exit when closes at mid point
+                if (ohlc.Close <= (dca.UpperBand - dca.LowerBand) / 2 + dca.LowerBand)
+                {
+                    CreateOrder(ohlc, date, "Sell", $"Closes at mid point");
+                    State = TradingState.Initial;
+                    return;
+                }
+            }
+        }
 
         private void RelativeVigorIndexStrategy(OHLC ohlc, DateTime date, StrategyParameters parameters)
         {
@@ -669,7 +717,7 @@ namespace Freedom.SimulatorServices.Controllers
     {
         public string Description { get; set; }
         public List<decimal> Values { get; set; }
-        public List<double> Volumes { get; set; }
+        public List<decimal> Volumes { get; set; }
         public List<double> Lower { get; set; }
         public List<double> Upper { get; set; }
         public Stats Stats { get; set; }

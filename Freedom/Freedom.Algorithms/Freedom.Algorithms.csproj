@@ -42,7 +42,14 @@
   <ItemGroup>
     <Compile Include="BollingerBandsAlgorithm.cs" />
     <Compile Include="DecimalExtensions.cs" />
+    <Compile Include="DonchianChannelAlgorithm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Freedom.DataAccessLayer\Freedom.DataAccessLayer.csproj">
+      <Project>{af7316b6-376d-449a-816c-550dc56ffc96}</Project>
+      <Name>Freedom.DataAccessLayer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
