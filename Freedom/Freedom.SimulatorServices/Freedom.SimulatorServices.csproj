@@ -139,6 +139,7 @@
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
+    <Content Include="AppSettingsSecrets.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Freedom.Algorithms\Freedom.Algorithms.csproj">

@@ -32,7 +32,8 @@ namespace Freedom.SimulatorServices.Controllers
         public SimulationResult Simulate(DateTime start, DateTime end, int interval, StrategyParameters parameters)
         {
             //Read the OHLC from database
-            var connectionString = ConfigurationManager.ConnectionStrings["marketdata-azure"].ConnectionString;
+            var connectionName = ConfigurationManager.AppSettings["ConnectionName"];
+            var connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
 
             List<OHLC> ohlcList = new List<OHLC>();
 
@@ -307,7 +308,7 @@ namespace Freedom.SimulatorServices.Controllers
 
         private void SendEmail(string title, string message)
         {
-            var client = new SendGridClient("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");
+            var client = new SendGridClient(ConfigurationManager.AppSettings["SendGridApikey"]);
             var from = new EmailAddress("murat.tunaboylu@svarlight.com", "Freedom");
             var to = new EmailAddress("murattunaboylu@gmail.com", "Murat Tunaboylu");
             var body = message;
