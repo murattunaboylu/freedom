@@ -1,7 +1,6 @@
 ﻿using Freedom.Algorithms;
 using Freedom.DataAccessLayer;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -10,6 +9,8 @@ using System.Globalization;
 using System.Linq;
 using System.Web.Http;
 using System.Web.Http.Cors;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace Freedom.SimulatorServices.Controllers
 {
@@ -280,6 +281,11 @@ namespace Freedom.SimulatorServices.Controllers
 
             Orders.Add(order);
 
+            if (bool.Parse(ConfigurationManager.AppSettings["EmailSignals"]))
+            {
+                SendEmail($"{order.Type} Signal", $"{order.Type} {order.Quantity} @ {order.Price} - {order.Date}");
+            }
+
             //Settle the account as if the order is immediately executed
             if (type == "Buy")
             {
@@ -297,6 +303,18 @@ namespace Freedom.SimulatorServices.Controllers
             Events.Add(new Event(date, type, "@" + ohlc.Close + " " + description));
 
             return message;
+        }
+
+        private void SendEmail(string title, string message)
+        {
+            var client = new SendGridClient("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");
+            var from = new EmailAddress("murat.tunaboylu@svarlight.com", "Freedom");
+            var to = new EmailAddress("murattunaboylu@gmail.com", "Murat Tunaboylu");
+            var body = message;
+            var msg = MailHelper.CreateSingleEmail(from, to, title, body, "");
+
+            var x = client.SendEmailAsync(msg);
+            var r = x.Result;
         }
 
         public List<Order> Orders { get; set; }
