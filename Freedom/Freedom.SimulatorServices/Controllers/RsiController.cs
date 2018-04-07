@@ -308,7 +308,7 @@ namespace Freedom.SimulatorServices.Controllers
 
         private void SendEmail(string title, string message)
         {
-            var client = new SendGridClient(ConfigurationManager.AppSettings["SendGridApikey"]);
+            var client = new SendGridClient(ConfigurationManager.AppSettings["SendGridApiKey"]);
             var from = new EmailAddress("murat.tunaboylu@svarlight.com", "Freedom");
             var to = new EmailAddress("murattunaboylu@gmail.com", "Murat Tunaboylu");
             var body = message;
