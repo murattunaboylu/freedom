@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Globalization;
 using System.Linq;
 
@@ -11,13 +12,15 @@ namespace Freedom.Broker
             //Run the algo
             var simulationManager = new SimulationManager();
 
-            var results = simulationManager.GetProductAsync("rsi/20170701/20170801/120/").Result;
+            var start = ConfigurationManager.AppSettings["StartDate"] ?? "20170701";
+            var end = DateTime.Now.AddDays(1).ToString("yyyyMMdd");
+            var results = simulationManager.GetProductAsync($"rsi/{start}/{end}/120/").Result;
 
             //Report daily overall status
             var reportManager = new ReportManager();
 
             if (DateTime.Now.Hour == 8 || DateTime.Now.Hour == 9)
-                reportManager.SendEmail("Daily", results.Stats.NetProfit.ToString(CultureInfo.InvariantCulture));
+                reportManager.SendEmail("Daily", results?.Stats.NetProfit.ToString(CultureInfo.InvariantCulture));
 
             //Look for signals
             if (results?.Orders != null)
