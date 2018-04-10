@@ -15,7 +15,7 @@
     <RootNamespace>Freedom.SimulatorServices</RootNamespace>
     <AssemblyName>Freedom.SimulatorServices</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <UseIISExpress>true</UseIISExpress>
+    <UseIISExpress>false</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
@@ -112,14 +112,22 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account.cs" />
     <Compile Include="App_Start\SwaggerConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Controllers\Event.cs" />
     <Compile Include="Controllers\ExportController.cs" />
+    <Compile Include="Controllers\Order.cs" />
     <Compile Include="Controllers\RsiController.cs" />
+    <Compile Include="Controllers\SimulationResult.cs" />
+    <Compile Include="Controllers\Stats.cs" />
+    <Compile Include="Controllers\StrategyParameters.cs" />
+    <Compile Include="Controllers\TradingState.cs" />
     <Compile Include="OhlcIndicators.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -139,7 +147,9 @@
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
-    <Content Include="AppSettingsSecrets.config" />
+    <Content Include="AppSettingsSecrets.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Freedom.Algorithms\Freedom.Algorithms.csproj">
@@ -166,7 +176,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>3880</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:2635/</IISUrl>
+          <IISUrl>http://localhost/Freedom.SimulatorServices</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.Algorithms.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.DataAccessLayer", "Freedom.DataAccessLayer\Freedom.DataAccessLayer.csproj", "{AF7316B6-376D-449A-816C-550DC56FFC96}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freedom.Broker", "Freedom.Broker\Freedom.Broker.csproj", "{9662EFF1-EF99-41F9-8B60-E711E0B4ED2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{AF7316B6-376D-449A-816C-550DC56FFC96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF7316B6-376D-449A-816C-550DC56FFC96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF7316B6-376D-449A-816C-550DC56FFC96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9662EFF1-EF99-41F9-8B60-E711E0B4ED2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9662EFF1-EF99-41F9-8B60-E711E0B4ED2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9662EFF1-EF99-41F9-8B60-E711E0B4ED2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9662EFF1-EF99-41F9-8B60-E711E0B4ED2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
